@@ -573,6 +573,157 @@
             border-bottom: none;
         }
         
+        .momentum-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #e2e8f0;
+        }
+        
+        .momentum-card.trending-up {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .momentum-card.trending-down {
+            border-left-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .momentum-card.stable {
+            border-left-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .momentum-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .momentum-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 1rem;
+        }
+        
+        .momentum-indicator {
+            font-size: 1.5rem;
+        }
+        
+        .momentum-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        
+        .momentum-change {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+        }
+        
+        .heatmap-day {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .heatmap-day:hover {
+            transform: scale(1.1);
+        }
+        
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #718096;
+        }
+        
+        .heatmap-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .heatmap-legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .seasonal-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .seasonal-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .seasonal-icon {
+            font-size: 2rem;
+        }
+        
+        .seasonal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .seasonal-stat {
+            color: #4a5568;
+            margin: 5px 0;
+        }
+        
+        .forecast-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .forecast-month {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .forecast-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .forecast-confidence {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
         @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -580,6 +731,10 @@
             
             .header h1 {
                 font-size: 1.5rem;
+            }
+            
+            .heatmap-grid {
+                gap: 2px;
             }
         }
     </style>
@@ -1111,6 +1266,7 @@
             generateInsights(analytics);
             generateActionPlan(analytics);
             createBudgetSection(analytics);
+            generateTrendAnalysis(analytics);
             populateTransactions();
             populateFilters();
         }
@@ -1123,13 +1279,6 @@
             const totalIncome = allTransactions.filter(t => t.Amount > 0).reduce((sum, t) => sum + t.Amount, 0);
             const totalExpenses = Math.abs(allTransactions.filter(t => t.Amount < 0).reduce((sum, t) => sum + t.Amount, 0));
             const currentBalance = allTransactions[allTransactions.length - 1]?.['Current balance'] || 0;
-
-            // Debug logging
-            console.log('Total Income:', totalIncome);
-            console.log('Total Expenses:', totalExpenses);
-            console.log('Sample transactions:', allTransactions.slice(0, 5));
-            console.log('Income transactions count:', allTransactions.filter(t => t.Amount > 0).length);
-            console.log('Expense transactions count:', allTransactions.filter(t => t.Amount < 0).length);
 
             const monthlyData = {};
             allTransactions.forEach(t => {
@@ -1622,6 +1771,382 @@
                     <div class="plan-impact">${item.impact}</div>
                 </div>
             `).join('');
+        }
+
+        function generateTrendAnalysis(analytics) {
+            // 1. Trend Direction & Summary Stats
+            const recentMonths = analytics.monthlyTrends.slice(-3);
+            const previousMonths = analytics.monthlyTrends.slice(-6, -3);
+            
+            if (recentMonths.length >= 2) {
+                const recentAvg = recentMonths.reduce((sum, m) => sum + m.expenses, 0) / recentMonths.length;
+                const prevAvg = previousMonths.length > 0 ? previousMonths.reduce((sum, m) => sum + m.expenses, 0) / previousMonths.length : recentAvg;
+                const changePercent = ((recentAvg - prevAvg) / prevAvg * 100);
+                
+                const trendDir = document.getElementById('trendDirection');
+                const trendDetails = document.getElementById('trendDetails');
+                
+                if (changePercent > 5) {
+                    trendDir.textContent = '📈 Increasing';
+                    trendDir.style.color = '#ef4444';
+                    trendDetails.textContent = `Up ${changePercent.toFixed(1)}% vs previous period`;
+                } else if (changePercent < -5) {
+                    trendDir.textContent = '📉 Decreasing';
+                    trendDir.style.color = '#10b981';
+                    trendDetails.textContent = `Down ${Math.abs(changePercent).toFixed(1)}% vs previous period`;
+                } else {
+                    trendDir.textContent = '➡️ Stable';
+                    trendDir.style.color = '#3b82f6';
+                    trendDetails.textContent = `±${Math.abs(changePercent).toFixed(1)}% change`;
+                }
+            }
+            
+            // 2. Daily Average Spending
+            const totalDays = Math.ceil((new Date(allTransactions[allTransactions.length - 1].Date) - new Date(allTransactions[0].Date)) / (1000 * 60 * 60 * 24));
+            const dailyAvg = analytics.totalExpenses / totalDays;
+            document.getElementById('dailyAvgSpending').textContent = `${dailyAvg.toFixed(2)}`;
+            
+            const lastMonth = analytics.monthlyTrends[analytics.monthlyTrends.length - 1];
+            const daysInLastMonth = 30;
+            const lastMonthDaily = lastMonth.expenses / daysInLastMonth;
+            const dailyChange = ((lastMonthDaily - dailyAvg) / dailyAvg * 100);
+            
+            if (dailyChange > 5) {
+                document.getElementById('dailyTrend').textContent = `↑ ${dailyChange.toFixed(1)}% above average`;
+                document.getElementById('dailyTrend').style.color = '#ef4444';
+            } else if (dailyChange < -5) {
+                document.getElementById('dailyTrend').textContent = `↓ ${Math.abs(dailyChange).toFixed(1)}% below average`;
+                document.getElementById('dailyTrend').style.color = '#10b981';
+            } else {
+                document.getElementById('dailyTrend').textContent = 'On track with average';
+            }
+            
+            // 3. Best Savings Month
+            const savingsPerMonth = analytics.monthlyTrends.map(m => ({
+                month: m.month,
+                savings: m.income - m.expenses
+            }));
+            const bestSavings = savingsPerMonth.reduce((best, current) => 
+                current.savings > best.savings ? current : best
+            );
+            
+            document.getElementById('bestMonth').textContent = bestSavings.month;
+            document.getElementById('bestMonthAmount').textContent = `Saved ${bestSavings.savings.toLocaleString()}`;
+            
+            // 4. Spending Pattern
+            const avgExpenses = analytics.monthlyTrends.map(m => m.expenses);
+            const variance = avgExpenses.reduce((sum, exp) => sum + Math.pow(exp - analytics.avgMonthlyExpenses, 2), 0) / avgExpenses.length;
+            const stdDev = Math.sqrt(variance);
+            const coefficientOfVariation = (stdDev / analytics.avgMonthlyExpenses) * 100;
+            
+            if (coefficientOfVariation < 15) {
+                document.getElementById('spendingPattern').textContent = '🎯 Consistent';
+                document.getElementById('patternDetails').textContent = 'Very predictable spending';
+            } else if (coefficientOfVariation < 30) {
+                document.getElementById('spendingPattern').textContent = '📊 Moderate';
+                document.getElementById('patternDetails').textContent = 'Some variation month-to-month';
+            } else {
+                document.getElementById('spendingPattern').textContent = '🎲 Variable';
+                document.getElementById('patternDetails').textContent = 'High spending fluctuations';
+            }
+            
+            // 5. Anomaly Detection
+            const anomalies = [];
+            analytics.monthlyTrends.forEach((month, idx) => {
+                if (idx === 0) return;
+                
+                const prevMonth = analytics.monthlyTrends[idx - 1];
+                const expenseChange = ((month.expenses - prevMonth.expenses) / prevMonth.expenses * 100);
+                
+                if (expenseChange > 40) {
+                    anomalies.push(`<strong>${month.month}</strong>: Expenses spiked <strong>${expenseChange.toFixed(0)}%</strong> (${month.expenses.toLocaleString()} vs ${prevMonth.expenses.toLocaleString()})`);
+                }
+                
+                // Check for unusual category spending
+                Object.entries(month.categories).forEach(([cat, amount]) => {
+                    const avgCategorySpending = analytics.categoryData.find(c => c.name === cat)?.value / analytics.monthlyTrends.length || 0;
+                    if (amount > avgCategorySpending * 2.5 && amount > 500) {
+                        anomalies.push(`<strong>${month.month}</strong>: Unusually high <strong>${cat}</strong> spending (${amount.toLocaleString()}, ${((amount / avgCategorySpending - 1) * 100).toFixed(0)}% above average)`);
+                    }
+                });
+            });
+            
+            if (anomalies.length > 0) {
+                document.getElementById('anomalyBox').style.display = 'block';
+                document.getElementById('anomalyList').innerHTML = anomalies.slice(0, 5).map(a => `<li>${a}</li>`).join('');
+            }
+            
+            // 6. Category Momentum
+            generateCategoryMomentum(analytics);
+            
+            // 7. Seasonal Patterns
+            generateSeasonalPatterns(analytics);
+            
+            // 8. Spending Heatmap
+            generateSpendingHeatmap(analytics);
+            
+            // 9. Forecast
+            generateForecast(analytics);
+        }
+        
+        function generateCategoryMomentum(analytics) {
+            const recentMonths = analytics.monthlyTrends.slice(-3);
+            const previousMonths = analytics.monthlyTrends.slice(-6, -3);
+            
+            if (previousMonths.length === 0) return;
+            
+            const categoryComparison = {};
+            
+            // Calculate average spending per category for both periods
+            analytics.categoryData.forEach(cat => {
+                const recentTotal = recentMonths.reduce((sum, m) => sum + (m.categories[cat.name] || 0), 0);
+                const prevTotal = previousMonths.reduce((sum, m) => sum + (m.categories[cat.name] || 0), 0);
+                
+                const recentAvg = recentTotal / recentMonths.length;
+                const prevAvg = prevTotal / previousMonths.length;
+                
+                if (prevAvg > 0) {
+                    const change = ((recentAvg - prevAvg) / prevAvg * 100);
+                    categoryComparison[cat.name] = {
+                        recent: recentAvg,
+                        previous: prevAvg,
+                        change: change,
+                        direction: change > 10 ? 'up' : change < -10 ? 'down' : 'stable'
+                    };
+                }
+            });
+            
+            // Sort by absolute change
+            const sortedCategories = Object.entries(categoryComparison)
+                .sort((a, b) => Math.abs(b[1].change) - Math.abs(a[1].change))
+                .slice(0, 8);
+            
+            const momentumHtml = sortedCategories.map(([cat, data]) => {
+                let cardClass = 'momentum-card ';
+                let indicator = '';
+                let changeColor = '';
+                
+                if (data.direction === 'up') {
+                    cardClass += 'trending-up';
+                    indicator = '📈';
+                    changeColor = '#ef4444';
+                } else if (data.direction === 'down') {
+                    cardClass += 'trending-down';
+                    indicator = '📉';
+                    changeColor = '#10b981';
+                } else {
+                    cardClass += 'stable';
+                    indicator = '➡️';
+                    changeColor = '#3b82f6';
+                }
+                
+                return `
+                    <div class="${cardClass}">
+                        <div class="momentum-header">
+                            <div class="momentum-title">${cat}</div>
+                            <div class="momentum-indicator">${indicator}</div>
+                        </div>
+                        <div class="momentum-stats">
+                            <span>Last 3 mo: <strong>${data.recent.toFixed(0)}</strong></span>
+                            <span>Prev 3 mo: <strong>${data.previous.toFixed(0)}</strong></span>
+                        </div>
+                        <div class="momentum-change" style="color: ${changeColor};">
+                            ${data.change > 0 ? '+' : ''}${data.change.toFixed(1)}% change
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('categoryMomentumGrid').innerHTML = momentumHtml;
+        }
+        
+        function generateSeasonalPatterns(analytics) {
+            // Group by season
+            const seasons = {
+                'Winter ❄️': { months: ['12', '01', '02'], total: 0, count: 0 },
+                'Spring 🌸': { months: ['03', '04', '05'], total: 0, count: 0 },
+                'Summer ☀️': { months: ['06', '07', '08'], total: 0, count: 0 },
+                'Fall 🍂': { months: ['09', '10', '11'], total: 0, count: 0 }
+            };
+            
+            analytics.monthlyTrends.forEach(month => {
+                const monthNum = month.month.split('-')[1];
+                
+                Object.entries(seasons).forEach(([season, data]) => {
+                    if (data.months.includes(monthNum)) {
+                        data.total += month.expenses;
+                        data.count++;
+                    }
+                });
+            });
+            
+            const seasonalHtml = Object.entries(seasons)
+                .filter(([_, data]) => data.count > 0)
+                .sort((a, b) => (b[1].total / b[1].count) - (a[1].total / a[1].count))
+                .map(([season, data]) => {
+                    const avg = data.total / data.count;
+                    const vsOverall = ((avg - analytics.avgMonthlyExpenses) / analytics.avgMonthlyExpenses * 100);
+                    
+                    return `
+                        <div class="seasonal-card">
+                            <div class="seasonal-header">
+                                <div class="seasonal-title">${season}</div>
+                            </div>
+                            <div class="seasonal-stat">
+                                Average: <strong>${avg.toLocaleString()}</strong>/month
+                            </div>
+                            <div class="seasonal-stat" style="color: ${vsOverall > 0 ? '#ef4444' : '#10b981'};">
+                                ${vsOverall > 0 ? '↑' : '↓'} ${Math.abs(vsOverall).toFixed(1)}% vs overall average
+                            </div>
+                            <div class="seasonal-stat" style="color: #718096;">
+                                Based on ${data.count} month${data.count > 1 ? 's' : ''} of data
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            
+            document.getElementById('seasonalInsights').innerHTML = seasonalHtml;
+        }
+        
+        function generateSpendingHeatmap(analytics) {
+            // Group transactions by day of week
+            const dayTotals = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            const dayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            
+            allTransactions.filter(t => t.Amount < 0).forEach(t => {
+                const day = new Date(t.Date).getDay();
+                dayTotals[day] += Math.abs(t.Amount);
+                dayCounts[day]++;
+            });
+            
+            const dayAverages = Object.keys(dayTotals).map(day => ({
+                day: parseInt(day),
+                avg: dayTotals[day] / (dayCounts[day] || 1)
+            }));
+            
+            const maxAvg = Math.max(...dayAverages.map(d => d.avg));
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            const heatmapHtml = `
+                <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+                    ${dayAverages.map(d => {
+                        const intensity = d.avg / maxAvg;
+                        const color = intensity > 0.8 ? '#ef4444' : 
+                                     intensity > 0.6 ? '#f59e0b' :
+                                     intensity > 0.4 ? '#eab308' :
+                                     intensity > 0.2 ? '#84cc16' : '#10b981';
+                        
+                        return `
+                            <div style="text-align: center; flex: 1;">
+                                <div style="font-weight: 600; color: #4a5568; margin-bottom: 8px;">${dayNames[d.day]}</div>
+                                <div style="background: ${color}; height: ${100 + (intensity * 100)}px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                    ${d.avg.toFixed(0)}
+                                </div>
+                                <div style="font-size: 0.8rem; color: #718096; margin-top: 5px;">${dayCounts[d.day]} transactions</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div style="text-align: center; color: #718096; margin-top: 20px;">
+                    <strong>Insight:</strong> You spend most on <strong>${dayNames[dayAverages.reduce((max, d) => d.avg > max.avg ? d : max).day]}</strong>
+                </div>
+            `;
+            
+            document.getElementById('spendingHeatmap').innerHTML = heatmapHtml;
+        }
+        
+        function generateForecast(analytics) {
+            if (analytics.monthlyTrends.length < 3) {
+                document.getElementById('forecastInsights').innerHTML = '<p style="color: #718096;">Need at least 3 months of data for forecasting</p>';
+                return;
+            }
+            
+            // Simple linear regression for trend
+            const recentMonths = analytics.monthlyTrends.slice(-6);
+            const xValues = recentMonths.map((_, i) => i);
+            const yValues = recentMonths.map(m => m.expenses);
+            
+            const n = xValues.length;
+            const sumX = xValues.reduce((a, b) => a + b, 0);
+            const sumY = yValues.reduce((a, b) => a + b, 0);
+            const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+            const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            // Predict next 3 months
+            const forecasts = [];
+            for (let i = 1; i <= 3; i++) {
+                const predicted = intercept + slope * (n + i - 1);
+                forecasts.push({
+                    month: `Month +${i}`,
+                    amount: predicted
+                });
+            }
+            
+            const trend = slope > 50 ? 'increasing' : slope < -50 ? 'decreasing' : 'stable';
+            const trendEmoji = slope > 50 ? '📈' : slope < -50 ? '📉' : '➡️';
+            
+            const forecastInsightsHtml = `
+                <div style="background: #f7fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 10px;">
+                        ${trendEmoji} Your spending is trending <strong>${trend}</strong>
+                    </div>
+                    <div style="color: #4a5568;">
+                        ${slope > 50 ? `Expenses are increasing by approximately ${Math.abs(slope).toFixed(0)}/month` : 
+                          slope < -50 ? `Expenses are decreasing by approximately ${Math.abs(slope).toFixed(0)}/month` :
+                          'Expenses are relatively stable month-to-month'}
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    ${forecasts.map((f, i) => `
+                        <div class="forecast-card">
+                            <div class="forecast-month">${f.month}</div>
+                            <div class="forecast-amount">${f.amount.toLocaleString()}</div>
+                            <div class="forecast-confidence">±10-15% variance</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('forecastInsights').innerHTML = forecastInsightsHtml;
+            
+            // Create forecast chart
+            if (charts.forecastChart) charts.forecastChart.destroy();
+            
+            const historicalLabels = recentMonths.map(m => m.month);
+            const forecastLabels = forecasts.map(f => f.month);
+            const allLabels = [...historicalLabels, ...forecastLabels];
+            
+            charts.forecastChart = new Chart(document.getElementById('forecastChart'), {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [{
+                        label: 'Historical',
+                        data: [...yValues, null, null, null],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'Forecast',
+                        data: [...Array(n - 1).fill(null), yValues[n - 1], ...forecasts.map(f => f.amount)],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderDash: [5, 5],
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
         }
 
         function createBudgetSection(analytics) {
