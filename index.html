@@ -1062,6 +1062,13 @@
             const totalExpenses = Math.abs(allTransactions.filter(t => t.Amount < 0).reduce((sum, t) => sum + t.Amount, 0));
             const currentBalance = allTransactions[allTransactions.length - 1]?.['Current balance'] || 0;
 
+            // Debug logging
+            console.log('Total Income:', totalIncome);
+            console.log('Total Expenses:', totalExpenses);
+            console.log('Sample transactions:', allTransactions.slice(0, 5));
+            console.log('Income transactions count:', allTransactions.filter(t => t.Amount > 0).length);
+            console.log('Expense transactions count:', allTransactions.filter(t => t.Amount < 0).length);
+
             const monthlyData = {};
             allTransactions.forEach(t => {
                 const date = new Date(t.Date);
@@ -1304,16 +1311,16 @@
             const savingsRate = ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100);
 
             if (savingsRate < 10) {
-                insights.push(`Your current savings rate is ${savingsRate.toFixed(1)}%. Financial experts recommend 15-20% for healthy financial growth.`);
+                insights.push(`Your current savings rate is <strong>${savingsRate.toFixed(1)}%</strong>. Financial experts recommend <strong>15-20%</strong> for healthy financial growth.`);
             } else if (savingsRate >= 20) {
-                insights.push(`Excellent! Your ${savingsRate.toFixed(1)}% savings rate exceeds the recommended 15-20%. Keep up the great work!`);
+                insights.push(`✅ Excellent! Your <strong>${savingsRate.toFixed(1)}%</strong> savings rate exceeds the recommended 15-20%. Keep up the great work!`);
             } else {
-                insights.push(`Good progress! Your ${savingsRate.toFixed(1)}% savings rate is on track. Push toward 20% for optimal financial health.`);
+                insights.push(`Good progress! Your <strong>${savingsRate.toFixed(1)}%</strong> savings rate is on track. Push toward <strong>20%</strong> for optimal financial health.`);
             }
 
             const topCategory = analytics.categoryData[0];
             const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
-            insights.push(`Your highest spending category is "${topCategory.name}" at ${topCategory.value.toLocaleString()} (${topPercent}% of expenses).`);
+            insights.push(`Your highest spending category is <strong>"${topCategory.name}"</strong> at <strong>${topCategory.value.toLocaleString()}</strong> (${topPercent}% of expenses).`);
             
             // Housing/Rent insights (should be 25-35% of income combined)
             const rentCategory = analytics.categoryData.find(c => c.name === 'Rent');
@@ -1321,20 +1328,20 @@
             const totalHousingCost = (rentCategory?.value || 0) + (housingCategory?.value || 0);
             
             if (totalHousingCost > 0) {
-                const housingPercent = (totalHousingCost / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
+                const housingPercent = (totalHousingCost / analytics.totalIncome * 100);
                 if (housingPercent > 35) {
-                    insights.push(`⚠️ Your total housing costs are ${housingPercent.toFixed(0)}% of income. Experts recommend keeping housing under 30-35%.`);
+                    insights.push(`⚠️ Your total housing costs are <strong>${housingPercent.toFixed(1)}%</strong> of income (<strong>${totalHousingCost.toLocaleString()}</strong>). Experts recommend keeping housing under <strong>30-35%</strong>.`);
                 } else if (housingPercent < 25) {
-                    insights.push(`✅ Great job! Your housing costs are only ${housingPercent.toFixed(0)}% of income, well below the 30-35% guideline.`);
+                    insights.push(`✅ Great job! Your housing costs are only <strong>${housingPercent.toFixed(1)}%</strong> of income, well below the 30-35% guideline.`);
                 }
             }
             
             // Transportation insights (should be 10-15% of income)
             const transportCategory = analytics.categoryData.find(c => c.name === 'Transportation');
             if (transportCategory) {
-                const transportPercent = (transportCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
+                const transportPercent = (transportCategory.value / analytics.totalIncome * 100);
                 if (transportPercent > 15) {
-                    insights.push(`Your transportation costs are ${transportPercent.toFixed(0)}% of income. Consider ways to reduce this below 15%.`);
+                    insights.push(`⚠️ Your transportation costs are <strong>${transportPercent.toFixed(1)}%</strong> of income (<strong>${transportCategory.value.toLocaleString()}</strong>). Consider ways to reduce this below <strong>15%</strong>.`);
                 }
             }
 
@@ -1342,15 +1349,16 @@
                 ((analytics.monthlyTrends[analytics.monthlyTrends.length - 1].expenses - analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses) / analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses * 100) : 0;
             
             if (monthlyIncrease > 10) {
-                insights.push(`⚠️ Your expenses increased by ${monthlyIncrease.toFixed(1)}% last month. Review your recent spending.`);
+                insights.push(`⚠️ Your expenses increased by <strong>${monthlyIncrease.toFixed(1)}%</strong> last month. Review your recent spending.`);
             } else if (monthlyIncrease < -10) {
-                insights.push(`✅ Excellent! Your expenses decreased by ${Math.abs(monthlyIncrease).toFixed(1)}% last month.`);
+                insights.push(`✅ Excellent! Your expenses decreased by <strong>${Math.abs(monthlyIncrease).toFixed(1)}%</strong> last month.`);
             }
 
             if (analytics.currentBalance < analytics.avgMonthlyExpenses * 3) {
-                insights.push(`Build your emergency fund to at least ${(analytics.avgMonthlyExpenses * 3).toFixed(0)} (3 months of expenses).`);
+                const targetFund = (analytics.avgMonthlyExpenses * 3).toFixed(0);
+                insights.push(`💰 Build your emergency fund to at least <strong>${parseFloat(targetFund).toLocaleString()}</strong> (3 months of expenses).`);
             } else if (analytics.currentBalance >= analytics.avgMonthlyExpenses * 6) {
-                insights.push(`✅ Excellent! You have ${(analytics.currentBalance / analytics.avgMonthlyExpenses).toFixed(1)} months of expenses saved.`);
+                insights.push(`✅ Excellent! You have <strong>${(analytics.currentBalance / analytics.avgMonthlyExpenses).toFixed(1)} months</strong> of expenses saved.`);
             }
 
             const miscCategory = analytics.categoryData.find(c => c.name === 'Miscellaneous');
@@ -1359,14 +1367,14 @@
             
             if (miscAndUnmarkedTotal > analytics.totalExpenses * 0.15) {
                 const percentUncategorized = (miscAndUnmarkedTotal / analytics.totalExpenses * 100).toFixed(1);
-                insights.push(`${percentUncategorized}% of your spending is "Miscellaneous" or "Unmarked". Use the Transactions tab to recategorize these for better insights.`);
+                insights.push(`📊 <strong>${percentUncategorized}%</strong> of your spending (<strong>${miscAndUnmarkedTotal.toLocaleString()}</strong>) is "Miscellaneous" or "Unmarked". Use the Transactions tab to recategorize these for better insights.`);
             }
             
             // Dining out vs groceries comparison
             const diningCategory = analytics.categoryData.find(c => c.name === 'Dining Out');
             const groceryCategory = analytics.categoryData.find(c => c.name === 'Groceries');
             if (diningCategory && groceryCategory && diningCategory.value > groceryCategory.value * 0.5) {
-                insights.push(`You're spending ${diningCategory.value.toLocaleString()} on dining out vs ${groceryCategory.value.toLocaleString()} on groceries. Cooking more at home could save significantly.`);
+                insights.push(`🍽️ You're spending <strong>${diningCategory.value.toLocaleString()}</strong> on dining out vs <strong>${groceryCategory.value.toLocaleString()}</strong> on groceries. Cooking more at home could save significantly.`);
             }
 
             document.getElementById('insightsList').innerHTML = insights.map(i => `<li>${i}</li>`).join('');
