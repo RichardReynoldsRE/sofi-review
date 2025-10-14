@@ -132,6 +132,82 @@
             margin-bottom: 20px;
         }
         
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .date-filter-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f7fafc;
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .date-filter-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .date-filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .date-filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .custom-date-inputs {
+            display: none;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .custom-date-inputs.active {
+            display: flex;
+        }
+        
+        .date-input {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .apply-filter-btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .apply-filter-btn:hover {
+            opacity: 0.9;
+        }
+        
         .header h1 {
             color: #2d3748;
             font-size: 2rem;
@@ -675,6 +751,17 @@
             opacity: 0.9;
         }
         
+        .filter-indicator {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
         @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -711,8 +798,26 @@
                         <h1>Your Financial Command Center</h1>
                         <p id="dateRange"></p>
                     </div>
-                    <div>
-                        <button class="btn btn-success" onclick="exportCSV()">📥 Export Tagged Data</button>
+                    <div class="header-controls">
+                        <!-- Date Filter -->
+                        <div class="date-filter-container">
+                            <span class="date-filter-label">📅 Time Period:</span>
+                            <select class="date-filter-select" id="dateRangeFilter" onchange="handleDateFilterChange()">
+                                <option value="all">All Time</option>
+                                <option value="30">Last Month</option>
+                                <option value="90">Last 3 Months</option>
+                                <option value="180">Last 6 Months</option>
+                                <option value="365">Last Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                            <div class="custom-date-inputs" id="customDateInputs">
+                                <input type="date" class="date-input" id="startDate" />
+                                <span style="color: #4a5568;">to</span>
+                                <input type="date" class="date-input" id="endDate" />
+                                <button class="apply-filter-btn" onclick="applyCustomDateFilter()">Apply</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" onclick="exportCSV()">📥 Export</button>
                     </div>
                 </div>
                 <div class="tabs">
@@ -965,6 +1070,7 @@
 
     <script>
         let allTransactions = [];
+        let filteredTransactionsByDate = [];
         let charts = {};
         let categoryCustomizations = {};
         let currentEditTransaction = null;
@@ -1023,11 +1129,83 @@
                         return cleaned;
                     });
 
+                    // Initialize with all transactions
+                    filteredTransactionsByDate = [...allTransactions];
+                    
+                    // Set default date range in the UI
+                    const minDate = new Date(allTransactions[0].Date);
+                    const maxDate = new Date(allTransactions[allTransactions.length - 1].Date);
+                    document.getElementById('startDate').value = minDate.toISOString().split('T')[0];
+                    document.getElementById('endDate').value = maxDate.toISOString().split('T')[0];
+
                     processData();
                     document.getElementById('uploadSection').style.display = 'none';
                     document.getElementById('dashboard').classList.add('active');
                 }
             });
+        }
+        
+        function handleDateFilterChange() {
+            const filterValue = document.getElementById('dateRangeFilter').value;
+            const customInputs = document.getElementById('customDateInputs');
+            
+            if (filterValue === 'custom') {
+                customInputs.classList.add('active');
+                return;
+            } else {
+                customInputs.classList.remove('active');
+            }
+            
+            if (filterValue === 'all') {
+                filteredTransactionsByDate = [...allTransactions];
+            } else {
+                const days = parseInt(filterValue);
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - days);
+                
+                filteredTransactionsByDate = allTransactions.filter(t => {
+                    return new Date(t.Date) >= cutoffDate;
+                });
+            }
+            
+            processData();
+        }
+        
+        function applyCustomDateFilter() {
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            
+            // Validate dates
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('Start date must be before end date');
+                return;
+            }
+            
+            // Check for minimum 1 month (30 days)
+            const daysDiff = (endDate - startDate) / (1000 * 60 * 60 * 24);
+            if (daysDiff < 30) {
+                alert('Date range must be at least 1 month (30 days)');
+                return;
+            }
+            
+            // Filter transactions
+            filteredTransactionsByDate = allTransactions.filter(t => {
+                const transDate = new Date(t.Date);
+                return transDate >= startDate && transDate <= endDate;
+            });
+            
+            if (filteredTransactionsByDate.length === 0) {
+                alert('No transactions found in the selected date range');
+                filteredTransactionsByDate = [...allTransactions];
+                return;
+            }
+            
+            processData();
         }
 
         function categorizeTransaction(transaction) {
@@ -1220,16 +1398,19 @@
         }
 
         function calculateAnalytics() {
-            allTransactions.forEach(t => {
+            // Use filtered transactions for all calculations
+            const transactionsToAnalyze = filteredTransactionsByDate;
+            
+            transactionsToAnalyze.forEach(t => {
                 t.Category = categorizeTransaction(t);
             });
 
-            const totalIncome = allTransactions.filter(t => t.Amount > 0).reduce((sum, t) => sum + t.Amount, 0);
-            const totalExpenses = Math.abs(allTransactions.filter(t => t.Amount < 0).reduce((sum, t) => sum + t.Amount, 0));
-            const currentBalance = allTransactions[allTransactions.length - 1]?.['Current balance'] || 0;
+            const totalIncome = transactionsToAnalyze.filter(t => t.Amount > 0).reduce((sum, t) => sum + t.Amount, 0);
+            const totalExpenses = Math.abs(transactionsToAnalyze.filter(t => t.Amount < 0).reduce((sum, t) => sum + t.Amount, 0));
+            const currentBalance = transactionsToAnalyze[transactionsToAnalyze.length - 1]?.['Current balance'] || 0;
 
             const monthlyData = {};
-            allTransactions.forEach(t => {
+            transactionsToAnalyze.forEach(t => {
                 const date = new Date(t.Date);
                 const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 
@@ -1258,7 +1439,7 @@
 
             const categoryData = {};
             const categoryDetails = {};
-            allTransactions.filter(t => t.Amount < 0).forEach(t => {
+            transactionsToAnalyze.filter(t => t.Amount < 0).forEach(t => {
                 const cat = t.Category;
                 if (!categoryData[cat]) {
                     categoryData[cat] = 0;
@@ -1283,25 +1464,27 @@
                 monthlyTrends,
                 categoryData: categoryArray,
                 categoryDetails,
-                avgMonthlyIncome: totalIncome / monthlyTrends.length,
-                avgMonthlyExpenses: totalExpenses / monthlyTrends.length
+                avgMonthlyIncome: monthlyTrends.length > 0 ? totalIncome / monthlyTrends.length : 0,
+                avgMonthlyExpenses: monthlyTrends.length > 0 ? totalExpenses / monthlyTrends.length : 0
             };
         }
 
         function updateStats(analytics) {
-            const firstDate = new Date(allTransactions[0].Date).toLocaleDateString();
-            const lastDate = new Date(allTransactions[allTransactions.length - 1].Date).toLocaleDateString();
+            if (filteredTransactionsByDate.length === 0) return;
+            
+            const firstDate = new Date(filteredTransactionsByDate[0].Date).toLocaleDateString();
+            const lastDate = new Date(filteredTransactionsByDate[filteredTransactionsByDate.length - 1].Date).toLocaleDateString();
             document.getElementById('dateRange').textContent = `${firstDate} - ${lastDate}`;
 
-            document.getElementById('currentBalance').textContent = `$${analytics.currentBalance.toLocaleString()}`;
-            document.getElementById('totalIncome').textContent = `$${analytics.totalIncome.toLocaleString()}`;
-            document.getElementById('avgIncome').textContent = `Avg: $${Math.round(analytics.avgMonthlyIncome).toLocaleString()}/mo`;
-            document.getElementById('totalExpenses').textContent = `$${analytics.totalExpenses.toLocaleString()}`;
-            document.getElementById('avgExpenses').textContent = `Avg: $${Math.round(analytics.avgMonthlyExpenses).toLocaleString()}/mo`;
+            document.getElementById('currentBalance').textContent = `${analytics.currentBalance.toLocaleString()}`;
+            document.getElementById('totalIncome').textContent = `${analytics.totalIncome.toLocaleString()}`;
+            document.getElementById('avgIncome').textContent = `Avg: ${Math.round(analytics.avgMonthlyIncome).toLocaleString()}/mo`;
+            document.getElementById('totalExpenses').textContent = `${analytics.totalExpenses.toLocaleString()}`;
+            document.getElementById('avgExpenses').textContent = `Avg: ${Math.round(analytics.avgMonthlyExpenses).toLocaleString()}/mo`;
             
-            const savingsRate = ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100).toFixed(1);
+            const savingsRate = analytics.totalIncome > 0 ? ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100).toFixed(1) : 0;
             document.getElementById('savingsRate').textContent = `${savingsRate}%`;
-            document.getElementById('netSavings').textContent = `Net: $${Math.round(analytics.totalIncome - analytics.totalExpenses).toLocaleString()}`;
+            document.getElementById('netSavings').textContent = `Net: ${Math.round(analytics.totalIncome - analytics.totalExpenses).toLocaleString()}`;
         }
 
         function createCharts(analytics) {
@@ -1492,7 +1675,15 @@
 
         function generateInsights(analytics) {
             const insights = [];
-            const savingsRate = ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100);
+            
+            // Check if we have enough data
+            if (analytics.totalIncome === 0 && analytics.totalExpenses === 0) {
+                insights.push('No transaction data available for the selected time period. Try adjusting your date filter.');
+                document.getElementById('insightsList').innerHTML = insights.map(i => `<li>${i}</li>`).join('');
+                return;
+            }
+            
+            const savingsRate = analytics.totalIncome > 0 ? ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100) : 0;
 
             if (savingsRate < 10) {
                 insights.push(`Your current savings rate is <strong>${savingsRate.toFixed(1)}%</strong>. Financial experts recommend <strong>15-20%</strong> for healthy financial growth.`);
@@ -1502,10 +1693,11 @@
                 insights.push(`Good progress! Your <strong>${savingsRate.toFixed(1)}%</strong> savings rate is on track. Push toward <strong>20%</strong> for optimal financial health.`);
             }
 
-            const topCategory = analytics.categoryData[0];
-            const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
-            insights.push(`Your highest spending category is <strong>"${topCategory.name}"</strong> at <strong>$${topCategory.value.toLocaleString()}</strong> (${topPercent}% of expenses).`);
-            
+            if (analytics.categoryData.length > 0) {
+                const topCategory = analytics.categoryData[0];
+                const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
+                insights.push(`Your highest spending category is <strong>"${topCategory.name}"</strong> at <strong>${topCategory.value.toLocaleString()}</strong> (${topPercent}% of expenses).`);
+            }
             // Housing/Rent insights (should be 25-35% of income combined)
             const rentCategory = analytics.categoryData.find(c => c.name === 'Rent');
             const housingCategory = analytics.categoryData.find(c => c.name === 'Housing');
@@ -1834,23 +2026,27 @@
                 }
                 
                 // 2. Daily Average Spending
-                const totalDays = Math.ceil((new Date(allTransactions[allTransactions.length - 1].Date) - new Date(allTransactions[0].Date)) / (1000 * 60 * 60 * 24));
-                const dailyAvg = analytics.totalExpenses / totalDays;
-                document.getElementById('dailyAvgSpending').textContent = `$${dailyAvg.toFixed(2)}`;
-                
-                const lastMonth = analytics.monthlyTrends[analytics.monthlyTrends.length - 1];
-                const daysInLastMonth = 30;
-                const lastMonthDaily = lastMonth.expenses / daysInLastMonth;
-                const dailyChange = ((lastMonthDaily - dailyAvg) / dailyAvg * 100);
-                
-                if (dailyChange > 5) {
-                    document.getElementById('dailyTrend').textContent = `↑ ${dailyChange.toFixed(1)}% above average`;
-                    document.getElementById('dailyTrend').style.color = '#ef4444';
-                } else if (dailyChange < -5) {
-                    document.getElementById('dailyTrend').textContent = `↓ ${Math.abs(dailyChange).toFixed(1)}% below average`;
-                    document.getElementById('dailyTrend').style.color = '#10b981';
-                } else {
-                    document.getElementById('dailyTrend').textContent = 'On track with average';
+                if (filteredTransactionsByDate.length > 0) {
+                    const totalDays = Math.ceil((new Date(filteredTransactionsByDate[filteredTransactionsByDate.length - 1].Date) - new Date(filteredTransactionsByDate[0].Date)) / (1000 * 60 * 60 * 24));
+                    const dailyAvg = analytics.totalExpenses / (totalDays || 1);
+                    document.getElementById('dailyAvgSpending').textContent = `${dailyAvg.toFixed(2)}`;
+                    
+                    const lastMonth = analytics.monthlyTrends[analytics.monthlyTrends.length - 1];
+                    if (lastMonth) {
+                        const daysInLastMonth = 30;
+                        const lastMonthDaily = lastMonth.expenses / daysInLastMonth;
+                        const dailyChange = ((lastMonthDaily - dailyAvg) / dailyAvg * 100);
+                        
+                        if (dailyChange > 5) {
+                            document.getElementById('dailyTrend').textContent = `↑ ${dailyChange.toFixed(1)}% above average`;
+                            document.getElementById('dailyTrend').style.color = '#ef4444';
+                        } else if (dailyChange < -5) {
+                            document.getElementById('dailyTrend').textContent = `↓ ${Math.abs(dailyChange).toFixed(1)}% below average`;
+                            document.getElementById('dailyTrend').style.color = '#10b981';
+                        } else {
+                            document.getElementById('dailyTrend').textContent = 'On track with average';
+                        }
+                    }
                 }
                 
                 // 3. Best Savings Month
@@ -1928,7 +2124,10 @@
             const recentMonths = analytics.monthlyTrends.slice(-3);
             const previousMonths = analytics.monthlyTrends.slice(-6, -3);
             
-            if (previousMonths.length === 0) return;
+            if (previousMonths.length === 0 || recentMonths.length < 2) {
+                document.getElementById('categoryMomentumGrid').innerHTML = '<p style="color: #718096; padding: 20px;">Need at least 6 months of data to show category momentum. Try adjusting your date filter to include more data.</p>';
+                return;
+            }
             
             const categoryComparison = {};
             
@@ -2048,7 +2247,7 @@
             const dayTotals = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
             const dayCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
             
-            allTransactions.filter(t => t.Amount < 0).forEach(t => {
+            filteredTransactionsByDate.filter(t => t.Amount < 0).forEach(t => {
                 const day = new Date(t.Date).getDay();
                 dayTotals[day] += Math.abs(t.Amount);
                 dayCounts[day]++;
@@ -2249,7 +2448,8 @@
             const category = document.getElementById('categoryFilter').value;
             const days = parseInt(document.getElementById('dateFilter').value);
 
-            let filtered = [...allTransactions].reverse();
+            // Start with the date-filtered transactions
+            let filtered = [...filteredTransactionsByDate].reverse();
 
             if (search) {
                 filtered = filtered.filter(t => t.Description.toLowerCase().includes(search));
