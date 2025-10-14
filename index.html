@@ -463,7 +463,8 @@
         }
         
         .category-Miscellaneous { background: #e2e8f0; color: #4a5568; }
-        .category-Housing { background: #dbeafe; color: #1e3a8a; }
+        .category-Rent { background: #dbeafe; color: #1e40af; }
+        .category-Housing { background: #bfdbfe; color: #1e3a8a; }
         .category-Utilities { background: #ede9fe; color: #5b21b6; }
         .category-Groceries { background: #d1fae5; color: #065f46; }
         .category-Transportation { background: #ccfbf1; color: #134e4a; }
@@ -732,7 +733,7 @@
             <div id="transactionsTab" class="tab-content" style="display: none;">
                 <div class="transactions-table">
                     <h3>Transaction History & Tagging</h3>
-                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions using our 15 universal budget categories, or select multiple rows for bulk tagging</p>
+                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions using our 16 universal budget categories, or select multiple rows for bulk tagging</p>
                     
                     <div class="bulk-actions" id="bulkActions">
                         <span id="selectedCount">0 selected</span>
@@ -806,8 +807,9 @@
         let filteredTransactionsList = [];
         let isLoadingMore = false;
 
-        const categories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Dining Out', 'Entertainment', 'Business Expense', 'Gifts', 'Income', 'Miscellaneous'];
+        const categories = ['Rent', 'Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Dining Out', 'Entertainment', 'Business Expense', 'Gifts', 'Income', 'Miscellaneous'];
         const categoryColors = {
+            'Rent': '#2563eb',
             'Housing': '#3b82f6',
             'Utilities': '#8b5cf6',
             'Groceries': '#10b981',
@@ -894,10 +896,16 @@
                 return 'Gifts';
             }
             
-            // Housing - Rent, mortgage, property tax, HOA
-            if (desc.includes('RENT') || desc.includes('MORTGAGE') || desc.includes('PROPERTY TAX') || 
-                desc.includes('HOA') || desc.includes('LANDLORD') || desc.includes('APARTMENT') ||
-                desc.includes('U-HAUL') || desc.includes('STORAGE')) {
+            // Rent - Monthly rent payments
+            if (desc.includes('RENT') || desc.includes('APARTMENT') || desc.includes('LANDLORD')) {
+                return 'Rent';
+            }
+            
+            // Housing - Mortgage, property tax, HOA, home maintenance, storage
+            if (desc.includes('MORTGAGE') || desc.includes('PROPERTY TAX') || 
+                desc.includes('HOA') || desc.includes('U-HAUL') || desc.includes('STORAGE') ||
+                desc.includes('HOME DEPOT') || desc.includes('LOWES') || desc.includes('HOME REPAIR') ||
+                desc.includes('HOMEOWNERS') || desc.includes('PROPERTY INSURANCE')) {
                 return 'Housing';
             }
             
@@ -1294,12 +1302,15 @@
             const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
             insights.push(`Your highest spending category is "${topCategory.name}" at ${topCategory.value.toLocaleString()} (${topPercent}% of expenses).`);
             
-            // Housing insights (should be 25-35% of income)
+            // Housing/Rent insights (should be 25-35% of income combined)
+            const rentCategory = analytics.categoryData.find(c => c.name === 'Rent');
             const housingCategory = analytics.categoryData.find(c => c.name === 'Housing');
-            if (housingCategory) {
-                const housingPercent = (housingCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
+            const totalHousingCost = (rentCategory?.value || 0) + (housingCategory?.value || 0);
+            
+            if (totalHousingCost > 0) {
+                const housingPercent = (totalHousingCost / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
                 if (housingPercent > 35) {
-                    insights.push(`⚠️ Your housing costs are ${housingPercent.toFixed(0)}% of income. Experts recommend keeping housing under 30-35%.`);
+                    insights.push(`⚠️ Your total housing costs are ${housingPercent.toFixed(0)}% of income. Experts recommend keeping housing under 30-35%.`);
                 } else if (housingPercent < 25) {
                     insights.push(`✅ Great job! Your housing costs are only ${housingPercent.toFixed(0)}% of income, well below the 30-35% guideline.`);
                 }
@@ -1353,11 +1364,24 @@
             
             // Review top spending category
             const topSpending = analytics.categoryData[0];
-            if (topSpending.name === 'Housing' && topSpending.value / (analytics.totalIncome / analytics.monthlyTrends.length) > 0.35) {
-                shortTerm.push({
-                    text: 'Your housing costs exceed 35% of income. Explore options to reduce: roommate, refinance, or downsize',
-                    impact: 'Reduce to 30%'
-                });
+            
+            // Rent/Housing specific advice
+            const rentCategory = analytics.categoryData.find(c => c.name === 'Rent');
+            const housingCategory = analytics.categoryData.find(c => c.name === 'Housing');
+            const totalHousingCost = (rentCategory?.value || 0) + (housingCategory?.value || 0);
+            
+            if (totalHousingCost / (analytics.totalIncome / analytics.monthlyTrends.length) > 0.35) {
+                if (rentCategory) {
+                    shortTerm.push({
+                        text: 'Your rent exceeds 35% of income. Consider: getting a roommate, moving to a lower-cost area, or negotiating with landlord',
+                        impact: 'Reduce to 30%'
+                    });
+                } else if (housingCategory) {
+                    shortTerm.push({
+                        text: 'Your housing costs exceed 35% of income. Explore options: refinance mortgage, reduce maintenance costs, or downsize',
+                        impact: 'Reduce to 30%'
+                    });
+                }
             }
             
             if (topSpending.name === 'Dining Out') {
@@ -1590,6 +1614,7 @@
                 typeFilter.appendChild(option);
             });
 
+            // Use only the defined categories, not categories from transaction data
             const categoryFilter = document.getElementById('categoryFilter');
             categories.forEach(cat => {
                 const option = document.createElement('option');
