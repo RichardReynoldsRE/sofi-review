@@ -462,14 +462,18 @@
             background: #f0f4ff;
         }
         
-        .category-Other { background: #e2e8f0; color: #4a5568; }
+        .category-Miscellaneous { background: #e2e8f0; color: #4a5568; }
+        .category-Housing { background: #dbeafe; color: #1e3a8a; }
+        .category-Utilities { background: #ede9fe; color: #5b21b6; }
         .category-Groceries { background: #d1fae5; color: #065f46; }
-        .category-Food { background: #fef3c7; color: #78350f; }
-        .category-Shopping { background: #dbeafe; color: #1e3a8a; }
-        .category-Bills { background: #e9d5ff; color: #581c87; }
-        .category-Storage { background: #fed7aa; color: #7c2d12; }
-        .category-Transfers { background: #fce7f3; color: #831843; }
         .category-Transportation { background: #ccfbf1; color: #134e4a; }
+        .category-Healthcare { background: #fef3c7; color: #78350f; }
+        .category-Insurance { background: #fce7f3; color: #831843; }
+        .category-DebtPayments { background: #fee2e2; color: #7f1d1d; }
+        .category-SavingsInvestments { background: #d1fae5; color: #14532d; }
+        .category-PersonalCare { background: #f3e8ff; color: #581c87; }
+        .category-DiningOut { background: #fed7aa; color: #7c2d12; }
+        .category-Entertainment { background: #cffafe; color: #164e63; }
         
         .modal {
             display: none;
@@ -579,7 +583,7 @@
         <!-- Upload Section -->
         <div class="upload-section" id="uploadSection">
             <h1>💰 Advanced Financial Dashboard</h1>
-            <p>Upload your bank transaction CSV to unlock powerful insights</p>
+            <p>Upload your bank transaction CSV to unlock powerful insights with research-backed budget categories</p>
             <div class="file-input-wrapper">
                 <input type="file" id="fileInput" accept=".csv" />
                 <label for="fileInput" class="file-input-label">
@@ -725,7 +729,7 @@
             <div id="transactionsTab" class="tab-content" style="display: none;">
                 <div class="transactions-table">
                     <h3>Transaction History & Tagging</h3>
-                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions, or select multiple rows for bulk tagging</p>
+                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions using our 12 universal budget categories, or select multiple rows for bulk tagging</p>
                     
                     <div class="bulk-actions" id="bulkActions">
                         <span id="selectedCount">0 selected</span>
@@ -799,16 +803,20 @@
         let filteredTransactionsList = [];
         let isLoadingMore = false;
 
-        const categories = ['Groceries', 'Food & Dining', 'Shopping', 'Bills & Utilities', 'Storage', 'Transfers & Payments', 'Transportation', 'Other'];
+        const categories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Dining Out', 'Entertainment', 'Miscellaneous'];
         const categoryColors = {
+            'Housing': '#3b82f6',
+            'Utilities': '#8b5cf6',
             'Groceries': '#10b981',
-            'Food & Dining': '#f59e0b',
-            'Shopping': '#3b82f6',
-            'Bills & Utilities': '#8b5cf6',
-            'Storage': '#f97316',
-            'Transfers & Payments': '#ec4899',
             'Transportation': '#14b8a6',
-            'Other': '#6b7280'
+            'Healthcare': '#f59e0b',
+            'Insurance': '#ec4899',
+            'Debt Payments': '#ef4444',
+            'Savings & Investments': '#10b981',
+            'Personal Care': '#a855f7',
+            'Dining Out': '#f97316',
+            'Entertainment': '#06b6d4',
+            'Miscellaneous': '#6b7280'
         };
 
         document.getElementById('fileInput').addEventListener('change', handleFileUpload);
@@ -849,16 +857,130 @@
             if (transaction.CustomCategory) return transaction.CustomCategory;
             
             const desc = transaction.Description.toUpperCase();
+            const amount = transaction.Amount;
             
-            if (desc.includes('HANNAFORD') || desc.includes('SHAWS') || desc.includes('WALMART') || desc.includes('GROCERY')) return 'Groceries';
-            if (desc.includes('RESTAURANT') || desc.includes('PIZZA') || desc.includes('CAFE') || desc.includes('DUNKIN') || desc.includes('BAGEL') || desc.includes('FOOD')) return 'Food & Dining';
-            if (desc.includes('AMAZON') || desc.includes('BEST BUY') || desc.includes('JCPENNEY') || desc.includes('TARGET')) return 'Shopping';
-            if (desc.includes('ATT') || desc.includes('INMOTION') || desc.includes('NETFLIX') || desc.includes('SPOTIFY') || desc.includes('UTILITY') || desc.includes('ELECTRIC')) return 'Bills & Utilities';
-            if (desc.includes('U-HAUL') || desc.includes('STORAGE')) return 'Storage';
-            if (desc.includes('VENMO') || desc.includes('CHECK') || desc.includes('TRANSFER')) return 'Transfers & Payments';
-            if (desc.includes('GAS') || desc.includes('FUEL') || desc.includes('SHELL') || desc.includes('EXXON') || desc.includes('UBER') || desc.includes('LYFT')) return 'Transportation';
+            // Housing - Rent, mortgage, property tax, HOA
+            if (desc.includes('RENT') || desc.includes('MORTGAGE') || desc.includes('PROPERTY TAX') || 
+                desc.includes('HOA') || desc.includes('LANDLORD') || desc.includes('APARTMENT')) {
+                return 'Housing';
+            }
             
-            return 'Other';
+            // Utilities - Electric, water, gas, internet, phone
+            if (desc.includes('ELECTRIC') || desc.includes('POWER') || desc.includes('UTILITY') || 
+                desc.includes('WATER') || desc.includes('GAS COMPANY') || desc.includes('INTERNET') || 
+                desc.includes('COMCAST') || desc.includes('VERIZON') || desc.includes('ATT') || 
+                desc.includes('T-MOBILE') || desc.includes('SPRINT') || desc.includes('SPECTRUM') ||
+                desc.includes('INMOTION') || desc.includes('PHONE') || desc.includes('CABLE')) {
+                return 'Utilities';
+            }
+            
+            // Groceries - Supermarkets and grocery stores
+            if (desc.includes('HANNAFORD') || desc.includes('SHAWS') || desc.includes('WALMART') || 
+                desc.includes('TARGET') || desc.includes('COSTCO') || desc.includes('SAMS CLUB') ||
+                desc.includes('WHOLE FOODS') || desc.includes('TRADER JOE') || desc.includes('ALDI') ||
+                desc.includes('KROGER') || desc.includes('PUBLIX') || desc.includes('SAFEWAY') ||
+                desc.includes('GROCERY') || desc.includes('MARKET') || desc.includes('FOOD LION')) {
+                return 'Groceries';
+            }
+            
+            // Dining Out - Restaurants, fast food, coffee shops, delivery
+            if (desc.includes('RESTAURANT') || desc.includes('PIZZA') || desc.includes('CAFE') || 
+                desc.includes('COFFEE') || desc.includes('DUNKIN') || desc.includes('STARBUCKS') ||
+                desc.includes('MCDONALDS') || desc.includes('BURGER') || desc.includes('TACO') ||
+                desc.includes('SUBWAY') || desc.includes('CHIPOTLE') || desc.includes('PANERA') ||
+                desc.includes('BAGEL') || desc.includes('DOORDASH') || desc.includes('UBER EATS') ||
+                desc.includes('GRUBHUB') || desc.includes('DELIVERY') || desc.includes('DINE')) {
+                return 'Dining Out';
+            }
+            
+            // Transportation - Gas, car payment, insurance, maintenance, public transit
+            if (desc.includes('GAS') || desc.includes('FUEL') || desc.includes('SHELL') || 
+                desc.includes('EXXON') || desc.includes('MOBIL') || desc.includes('CHEVRON') ||
+                desc.includes('BP ') || desc.includes('SUNOCO') || desc.includes('AUTO PAYMENT') ||
+                desc.includes('CAR PAYMENT') || desc.includes('UBER') || desc.includes('LYFT') ||
+                desc.includes('TRANSIT') || desc.includes('PARKING') || desc.includes('TOLL') ||
+                desc.includes('AAA ') || desc.includes('JIFFY LUBE') || desc.includes('MIDAS') ||
+                desc.includes('AUTO REPAIR') || desc.includes('MECHANIC') || desc.includes('DMV')) {
+                return 'Transportation';
+            }
+            
+            // Healthcare - Medical, dental, vision, pharmacy, doctor visits
+            if (desc.includes('HOSPITAL') || desc.includes('MEDICAL') || desc.includes('DOCTOR') || 
+                desc.includes('DENTAL') || desc.includes('DENTIST') || desc.includes('VISION') ||
+                desc.includes('PHARMACY') || desc.includes('CVS') || desc.includes('WALGREENS') ||
+                desc.includes('RITE AID') || desc.includes('PRESCRIPTION') || desc.includes('CLINIC') ||
+                desc.includes('HEALTH') || desc.includes('URGENT CARE') || desc.includes('THERAPY')) {
+                return 'Healthcare';
+            }
+            
+            // Insurance - Life, health, home, auto insurance (if not already categorized)
+            if (desc.includes('INSURANCE') || desc.includes('GEICO') || desc.includes('STATE FARM') ||
+                desc.includes('PROGRESSIVE') || desc.includes('ALLSTATE') || desc.includes('USAA') ||
+                desc.includes('LIBERTY MUTUAL') || desc.includes('PREMIUM')) {
+                return 'Insurance';
+            }
+            
+            // Debt Payments - Credit cards, loans, student loans
+            if (desc.includes('CREDIT CARD PAYMENT') || desc.includes('LOAN PAYMENT') || 
+                desc.includes('STUDENT LOAN') || desc.includes('NELNET') || desc.includes('NAVIENT') ||
+                desc.includes('GREAT LAKES') || desc.includes('PAYMENT TO CHASE') || 
+                desc.includes('PAYMENT TO CITI') || desc.includes('PAYMENT TO DISCOVER')) {
+                return 'Debt Payments';
+            }
+            
+            // Savings & Investments - Transfers to savings, investment accounts, retirement
+            if (desc.includes('SAVINGS') || desc.includes('INVESTMENT') || desc.includes('401K') ||
+                desc.includes('IRA') || desc.includes('FIDELITY') || desc.includes('VANGUARD') ||
+                desc.includes('SCHWAB') || desc.includes('ROBINHOOD') || desc.includes('BETTERMENT') ||
+                desc.includes('WEALTHFRONT') || amount > 0 && desc.includes('TRANSFER TO SAVINGS')) {
+                return 'Savings & Investments';
+            }
+            
+            // Personal Care - Haircuts, gym, clothing, personal hygiene
+            if (desc.includes('SALON') || desc.includes('BARBER') || desc.includes('HAIRCUT') || 
+                desc.includes('SPA') || desc.includes('GYM') || desc.includes('FITNESS') ||
+                desc.includes('PLANET FITNESS') || desc.includes('LA FITNESS') || desc.includes('YMCA') ||
+                desc.includes('CLOTHING') || desc.includes('APPAREL') || desc.includes('FOOTWEAR') ||
+                desc.includes('NIKE') || desc.includes('ADIDAS') || desc.includes('KOHLS') ||
+                desc.includes('MACYS') || desc.includes('NORDSTROM') || desc.includes('SEPHORA') ||
+                desc.includes('ULTA')) {
+                return 'Personal Care';
+            }
+            
+            // Entertainment - Streaming, movies, hobbies, subscriptions, recreation
+            if (desc.includes('NETFLIX') || desc.includes('HULU') || desc.includes('DISNEY') ||
+                desc.includes('SPOTIFY') || desc.includes('APPLE MUSIC') || desc.includes('HBO') ||
+                desc.includes('AMAZON PRIME') || desc.includes('MOVIE') || desc.includes('THEATER') ||
+                desc.includes('CINEMA') || desc.includes('CONCERT') || desc.includes('TICKET') ||
+                desc.includes('STEAM') || desc.includes('PLAYSTATION') || desc.includes('XBOX') ||
+                desc.includes('NINTENDO') || desc.includes('HOBBY') || desc.includes('BEST BUY') ||
+                desc.includes('GAMESTOP')) {
+                return 'Entertainment';
+            }
+            
+            // Special handling for common merchant patterns
+            if (desc.includes('AMAZON') || desc.includes('AMZN')) {
+                // Amazon could be groceries, shopping, or entertainment - default to Miscellaneous for user to categorize
+                return 'Miscellaneous';
+            }
+            
+            if (desc.includes('VENMO') || desc.includes('PAYPAL') || desc.includes('ZELLE') || 
+                desc.includes('CASH APP') || desc.includes('CHECK')) {
+                // Transfers and payments - could be anything, let user categorize
+                return 'Miscellaneous';
+            }
+            
+            if (desc.includes('U-HAUL') || desc.includes('STORAGE')) {
+                // Storage is technically housing-related
+                return 'Housing';
+            }
+            
+            if (desc.includes('USPS') || desc.includes('FEDEX') || desc.includes('UPS')) {
+                return 'Miscellaneous';
+            }
+            
+            // Default to Miscellaneous for anything not categorized
+            return 'Miscellaneous';
         }
 
         function processData() {
@@ -1123,13 +1245,36 @@
             const savingsRate = ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100);
 
             if (savingsRate < 10) {
-                insights.push(`Your current savings rate is ${savingsRate.toFixed(1)}%. Aim to increase this to at least 15-20% for better financial health.`);
+                insights.push(`Your current savings rate is ${savingsRate.toFixed(1)}%. Financial experts recommend 15-20% for healthy financial growth.`);
             } else if (savingsRate >= 20) {
-                insights.push(`Excellent! Your ${savingsRate.toFixed(1)}% savings rate is above the recommended 15-20%. Keep it up!`);
+                insights.push(`Excellent! Your ${savingsRate.toFixed(1)}% savings rate exceeds the recommended 15-20%. Keep up the great work!`);
+            } else {
+                insights.push(`Good progress! Your ${savingsRate.toFixed(1)}% savings rate is on track. Push toward 20% for optimal financial health.`);
             }
 
             const topCategory = analytics.categoryData[0];
-            insights.push(`Your highest spending category is "${topCategory.name}" at $${topCategory.value.toLocaleString()} (${(topCategory.value / analytics.totalExpenses * 100).toFixed(1)}% of total expenses).`);
+            const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
+            insights.push(`Your highest spending category is "${topCategory.name}" at ${topCategory.value.toLocaleString()} (${topPercent}% of expenses).`);
+            
+            // Housing insights (should be 25-35% of income)
+            const housingCategory = analytics.categoryData.find(c => c.name === 'Housing');
+            if (housingCategory) {
+                const housingPercent = (housingCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
+                if (housingPercent > 35) {
+                    insights.push(`⚠️ Your housing costs are ${housingPercent.toFixed(0)}% of income. Experts recommend keeping housing under 30-35%.`);
+                } else if (housingPercent < 25) {
+                    insights.push(`✅ Great job! Your housing costs are only ${housingPercent.toFixed(0)}% of income, well below the 30-35% guideline.`);
+                }
+            }
+            
+            // Transportation insights (should be 10-15% of income)
+            const transportCategory = analytics.categoryData.find(c => c.name === 'Transportation');
+            if (transportCategory) {
+                const transportPercent = (transportCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) * analytics.monthlyTrends.length * 100);
+                if (transportPercent > 15) {
+                    insights.push(`Your transportation costs are ${transportPercent.toFixed(0)}% of income. Consider ways to reduce this below 15%.`);
+                }
+            }
 
             const monthlyIncrease = analytics.monthlyTrends.length > 1 ? 
                 ((analytics.monthlyTrends[analytics.monthlyTrends.length - 1].expenses - analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses) / analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses * 100) : 0;
@@ -1137,16 +1282,25 @@
             if (monthlyIncrease > 10) {
                 insights.push(`⚠️ Your expenses increased by ${monthlyIncrease.toFixed(1)}% last month. Review your recent spending.`);
             } else if (monthlyIncrease < -10) {
-                insights.push(`✅ Great job! Your expenses decreased by ${Math.abs(monthlyIncrease).toFixed(1)}% last month.`);
+                insights.push(`✅ Excellent! Your expenses decreased by ${Math.abs(monthlyIncrease).toFixed(1)}% last month.`);
             }
 
             if (analytics.currentBalance < analytics.avgMonthlyExpenses * 3) {
-                insights.push(`Build your emergency fund to at least $${(analytics.avgMonthlyExpenses * 3).toFixed(0)} (3 months of expenses).`);
+                insights.push(`Build your emergency fund to at least ${(analytics.avgMonthlyExpenses * 3).toFixed(0)} (3 months of expenses).`);
+            } else if (analytics.currentBalance >= analytics.avgMonthlyExpenses * 6) {
+                insights.push(`✅ Excellent! You have ${(analytics.currentBalance / analytics.avgMonthlyExpenses).toFixed(1)} months of expenses saved.`);
             }
 
-            const otherCategory = analytics.categoryData.find(c => c.name === 'Other');
-            if (otherCategory && otherCategory.value > analytics.totalExpenses * 0.2) {
-                insights.push(`${(otherCategory.value / analytics.totalExpenses * 100).toFixed(1)}% of your spending is in "Other". Use the Transactions tab to recategorize these for better insights.`);
+            const miscCategory = analytics.categoryData.find(c => c.name === 'Miscellaneous');
+            if (miscCategory && miscCategory.value > analytics.totalExpenses * 0.15) {
+                insights.push(`${(miscCategory.value / analytics.totalExpenses * 100).toFixed(1)}% of your spending is "Miscellaneous". Use the Transactions tab to recategorize these for better insights.`);
+            }
+            
+            // Dining out vs groceries comparison
+            const diningCategory = analytics.categoryData.find(c => c.name === 'Dining Out');
+            const groceryCategory = analytics.categoryData.find(c => c.name === 'Groceries');
+            if (diningCategory && groceryCategory && diningCategory.value > groceryCategory.value * 0.5) {
+                insights.push(`You're spending ${diningCategory.value.toLocaleString()} on dining out vs ${groceryCategory.value.toLocaleString()} on groceries. Cooking more at home could save significantly.`);
             }
 
             document.getElementById('insightsList').innerHTML = insights.map(i => `<li>${i}</li>`).join('');
@@ -1157,60 +1311,144 @@
             const mediumTerm = [];
             const longTerm = [];
 
-            const topSpending = analytics.categoryData[0];
-            if (topSpending.name === 'Storage') {
-                shortTerm.push({
-                    text: 'Review your storage unit necessity and consider downsizing or canceling',
-                    impact: `Save $${(topSpending.value / (analytics.monthlyTrends.length)).toFixed(0)}/mo`
-                });
-            }
-
-            if (analytics.categoryData.find(c => c.name === 'Bills & Utilities')) {
-                shortTerm.push({
-                    text: 'Call service providers (internet, phone, insurance) to negotiate better rates',
-                    impact: 'Save $50-150/mo'
-                });
-            }
-
             const savingsRate = ((analytics.totalIncome - analytics.totalExpenses) / analytics.totalIncome * 100);
-            if (savingsRate < 15) {
+            
+            // Review top spending category
+            const topSpending = analytics.categoryData[0];
+            if (topSpending.name === 'Housing' && topSpending.value / (analytics.totalIncome / analytics.monthlyTrends.length) > 0.35) {
                 shortTerm.push({
-                    text: `Set up automatic transfer of $${Math.round((analytics.avgMonthlyIncome * 0.15) - (analytics.avgMonthlyIncome - analytics.avgMonthlyExpenses))}/mo to savings`,
+                    text: 'Your housing costs exceed 35% of income. Explore options to reduce: roommate, refinance, or downsize',
+                    impact: 'Reduce to 30%'
+                });
+            }
+            
+            if (topSpending.name === 'Dining Out') {
+                const avgPerMonth = topSpending.value / analytics.monthlyTrends.length;
+                shortTerm.push({
+                    text: 'Reduce dining out frequency by half and meal prep at home more often',
+                    impact: `Save ${Math.round(avgPerMonth * 0.5)}/mo`
+                });
+            }
+
+            // Utilities optimization
+            const utilitiesCategory = analytics.categoryData.find(c => c.name === 'Utilities');
+            if (utilitiesCategory) {
+                const avgMonthly = utilitiesCategory.value / analytics.monthlyTrends.length;
+                if (avgMonthly > 300) {
+                    shortTerm.push({
+                        text: 'Call internet, phone, and cable providers to negotiate better rates or switch plans',
+                        impact: 'Save $50-100/mo'
+                    });
+                }
+            }
+
+            // Insurance review
+            const insuranceCategory = analytics.categoryData.find(c => c.name === 'Insurance');
+            if (insuranceCategory) {
+                shortTerm.push({
+                    text: 'Shop around for insurance quotes (auto, home, life) - many people overpay by staying with same provider',
+                    impact: 'Save $30-80/mo'
+                });
+            }
+
+            // Savings rate improvement
+            if (savingsRate < 15) {
+                const targetSavings = (analytics.avgMonthlyIncome * 0.15);
+                const currentSavings = analytics.avgMonthlyIncome - analytics.avgMonthlyExpenses;
+                const gap = targetSavings - currentSavings;
+                
+                shortTerm.push({
+                    text: `Set up automatic transfer of ${Math.round(gap)}/mo to savings account on payday`,
                     impact: 'Reach 15% savings rate'
                 });
             }
 
-            mediumTerm.push({
-                text: 'Review all subscription services and cancel unused ones',
-                impact: 'Save $30-100/mo'
-            });
-
-            mediumTerm.push({
-                text: `Build emergency fund to $${(analytics.avgMonthlyExpenses * 6).toFixed(0)} (6 months expenses)`,
-                impact: 'Financial security'
-            });
-
-            if (analytics.categoryData.find(c => c.name === 'Food & Dining')?.value > analytics.avgMonthlyExpenses * 0.15) {
+            // Debt payoff
+            const debtCategory = analytics.categoryData.find(c => c.name === 'Debt Payments');
+            if (debtCategory) {
                 mediumTerm.push({
-                    text: 'Reduce dining out to 2x per week and meal prep at home',
-                    impact: 'Save $200-400/mo'
+                    text: 'List all debts by interest rate and create a debt payoff plan (avalanche method)',
+                    impact: 'Save on interest'
                 });
             }
 
+            // Emergency fund
+            if (analytics.currentBalance < analytics.avgMonthlyExpenses * 3) {
+                mediumTerm.push({
+                    text: `Build emergency fund to ${(analytics.avgMonthlyExpenses * 6).toFixed(0)} (6 months of expenses)`,
+                    impact: 'Financial security'
+                });
+            }
+
+            // Healthcare costs
+            const healthcareCategory = analytics.categoryData.find(c => c.name === 'Healthcare');
+            if (healthcareCategory && healthcareCategory.value / analytics.monthlyTrends.length > 200) {
+                mediumTerm.push({
+                    text: 'Review health insurance plan options during open enrollment for better coverage or lower costs',
+                    impact: 'Save $50-200/mo'
+                });
+            }
+
+            // Subscription audit
+            const entertainmentCategory = analytics.categoryData.find(c => c.name === 'Entertainment');
+            if (entertainmentCategory) {
+                mediumTerm.push({
+                    text: 'Audit all streaming services and subscriptions - cancel unused ones, share accounts with family',
+                    impact: 'Save $30-80/mo'
+                });
+            }
+
+            // Transportation review
+            const transportCategory = analytics.categoryData.find(c => c.name === 'Transportation');
+            if (transportCategory && transportCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) > 0.15) {
+                mediumTerm.push({
+                    text: 'Evaluate transportation costs: refinance auto loan, use public transit, or carpool when possible',
+                    impact: 'Reduce to 10-15%'
+                });
+            }
+
+            // Long-term goals
             longTerm.push({
-                text: 'Increase income through raises, promotions, or side projects by 10-15%',
-                impact: `+$${(analytics.avgMonthlyIncome * 0.125).toFixed(0)}/mo`
+                text: 'Increase income through skill development, certifications, or asking for 10-15% raise at performance review',
+                impact: `+${(analytics.avgMonthlyIncome * 0.125).toFixed(0)}/mo`
             });
 
             longTerm.push({
-                text: 'Start investing 10% of income in index funds or retirement accounts',
-                impact: 'Long-term wealth'
+                text: 'Start investing in low-cost index funds (after emergency fund is built) with 10-15% of income',
+                impact: 'Long-term wealth building'
             });
 
             longTerm.push({
-                text: 'Set specific financial goals (home purchase, retirement, travel)',
+                text: 'Max out employer 401(k) match if available (free money!), then contribute to Roth IRA',
+                impact: 'Retirement security'
+            });
+
+            longTerm.push({
+                text: 'Set specific financial goals with timelines: down payment fund, vacation savings, etc.',
                 impact: 'Clear direction'
             });
+
+            // Ensure we have at least 3 items in each section
+            if (shortTerm.length < 3) {
+                shortTerm.push({
+                    text: 'Track every expense for 30 days to identify spending leaks and behavioral patterns',
+                    impact: 'Awareness'
+                });
+            }
+            
+            if (shortTerm.length < 3) {
+                shortTerm.push({
+                    text: 'Set up bill payment reminders to avoid late fees and maintain good credit score',
+                    impact: 'Save $25-50/mo'
+                });
+            }
+
+            if (mediumTerm.length < 3) {
+                mediumTerm.push({
+                    text: 'Create a sinking fund for irregular expenses (car maintenance, gifts, annual fees)',
+                    impact: 'Avoid surprises'
+                });
+            }
 
             document.getElementById('shortTermPlan').innerHTML = shortTerm.map(item => `
                 <div class="plan-item">
