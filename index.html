@@ -474,6 +474,9 @@
         .category-PersonalCare { background: #f3e8ff; color: #581c87; }
         .category-DiningOut { background: #fed7aa; color: #7c2d12; }
         .category-Entertainment { background: #cffafe; color: #164e63; }
+        .category-BusinessExpense { background: #dbeafe; color: #075985; }
+        .category-Gifts { background: #fce7f3; color: #9f1239; }
+        .category-Income { background: #d1fae5; color: #166534; }
         
         .modal {
             display: none;
@@ -729,7 +732,7 @@
             <div id="transactionsTab" class="tab-content" style="display: none;">
                 <div class="transactions-table">
                     <h3>Transaction History & Tagging</h3>
-                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions using our 12 universal budget categories, or select multiple rows for bulk tagging</p>
+                    <p style="color: #718096; margin-bottom: 20px;">Click on category tags to recategorize transactions using our 15 universal budget categories, or select multiple rows for bulk tagging</p>
                     
                     <div class="bulk-actions" id="bulkActions">
                         <span id="selectedCount">0 selected</span>
@@ -803,7 +806,7 @@
         let filteredTransactionsList = [];
         let isLoadingMore = false;
 
-        const categories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Dining Out', 'Entertainment', 'Miscellaneous'];
+        const categories = ['Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Dining Out', 'Entertainment', 'Business Expense', 'Gifts', 'Income', 'Miscellaneous'];
         const categoryColors = {
             'Housing': '#3b82f6',
             'Utilities': '#8b5cf6',
@@ -816,6 +819,9 @@
             'Personal Care': '#a855f7',
             'Dining Out': '#f97316',
             'Entertainment': '#06b6d4',
+            'Business Expense': '#0ea5e9',
+            'Gifts': '#f472b6',
+            'Income': '#22c55e',
             'Miscellaneous': '#6b7280'
         };
 
@@ -859,9 +865,39 @@
             const desc = transaction.Description.toUpperCase();
             const amount = transaction.Amount;
             
+            // Income - positive amounts (deposits, paychecks, refunds, etc.)
+            if (amount > 0) {
+                if (desc.includes('DEPOSIT') || desc.includes('PAYROLL') || desc.includes('DIRECT DEPOSIT') ||
+                    desc.includes('SALARY') || desc.includes('PAYCHECK') || desc.includes('PAYMENT FROM') ||
+                    desc.includes('ACH CREDIT') || desc.includes('REFUND') || desc.includes('REIMBURSEMENT') ||
+                    desc.includes('INTEREST EARNED') || desc.includes('DIVIDEND') || desc.includes('BONUS')) {
+                    return 'Income';
+                }
+            }
+            
+            // Business Expense - work-related costs
+            if (desc.includes('BUSINESS') || desc.includes('OFFICE SUPPLY') || desc.includes('STAPLES') ||
+                desc.includes('OFFICE DEPOT') || desc.includes('FEDEX OFFICE') || desc.includes('UPS STORE') ||
+                desc.includes('LINKEDIN') || desc.includes('QUICKBOOKS') || desc.includes('ADOBE') ||
+                desc.includes('MICROSOFT 365') || desc.includes('ZOOM') || desc.includes('SLACK') ||
+                desc.includes('DROPBOX') || desc.includes('DOMAIN') || desc.includes('HOSTING') ||
+                desc.includes('AWS') || desc.includes('GOOGLE WORKSPACE') || desc.includes('PROFESSIONAL')) {
+                return 'Business Expense';
+            }
+            
+            // Gifts - giving and gift purchases
+            if (desc.includes('GIFT') || desc.includes('FLOWERS') || desc.includes('FTDS') ||
+                desc.includes('1-800-FLOWERS') || desc.includes('EDIBLE ARRANGEMENTS') ||
+                desc.includes('HALLMARK') || desc.includes('CARD STORE') || desc.includes('TOY STORE') ||
+                desc.includes('TOYS R US') || desc.includes('BUILD-A-BEAR') || desc.includes('CHARITABLE') ||
+                desc.includes('DONATION') || desc.includes('CHARITY') || desc.includes('GIVING')) {
+                return 'Gifts';
+            }
+            
             // Housing - Rent, mortgage, property tax, HOA
             if (desc.includes('RENT') || desc.includes('MORTGAGE') || desc.includes('PROPERTY TAX') || 
-                desc.includes('HOA') || desc.includes('LANDLORD') || desc.includes('APARTMENT')) {
+                desc.includes('HOA') || desc.includes('LANDLORD') || desc.includes('APARTMENT') ||
+                desc.includes('U-HAUL') || desc.includes('STORAGE')) {
                 return 'Housing';
             }
             
@@ -870,7 +906,8 @@
                 desc.includes('WATER') || desc.includes('GAS COMPANY') || desc.includes('INTERNET') || 
                 desc.includes('COMCAST') || desc.includes('VERIZON') || desc.includes('ATT') || 
                 desc.includes('T-MOBILE') || desc.includes('SPRINT') || desc.includes('SPECTRUM') ||
-                desc.includes('INMOTION') || desc.includes('PHONE') || desc.includes('CABLE')) {
+                desc.includes('INMOTION') || desc.includes('PHONE') || desc.includes('CABLE') ||
+                desc.includes('XFINITY') || desc.includes('COX') || desc.includes('FRONTIER')) {
                 return 'Utilities';
             }
             
@@ -879,7 +916,8 @@
                 desc.includes('TARGET') || desc.includes('COSTCO') || desc.includes('SAMS CLUB') ||
                 desc.includes('WHOLE FOODS') || desc.includes('TRADER JOE') || desc.includes('ALDI') ||
                 desc.includes('KROGER') || desc.includes('PUBLIX') || desc.includes('SAFEWAY') ||
-                desc.includes('GROCERY') || desc.includes('MARKET') || desc.includes('FOOD LION')) {
+                desc.includes('GROCERY') || desc.includes('SUPERMARKET') || desc.includes('FOOD LION') ||
+                desc.includes('WEGMANS') || desc.includes('STOP & SHOP')) {
                 return 'Groceries';
             }
             
@@ -889,7 +927,8 @@
                 desc.includes('MCDONALDS') || desc.includes('BURGER') || desc.includes('TACO') ||
                 desc.includes('SUBWAY') || desc.includes('CHIPOTLE') || desc.includes('PANERA') ||
                 desc.includes('BAGEL') || desc.includes('DOORDASH') || desc.includes('UBER EATS') ||
-                desc.includes('GRUBHUB') || desc.includes('DELIVERY') || desc.includes('DINE')) {
+                desc.includes('GRUBHUB') || desc.includes('DELIVERY') || desc.includes('DINE') ||
+                desc.includes('WENDYS') || desc.includes('CHICK-FIL-A') || desc.includes('DOMINOS')) {
                 return 'Dining Out';
             }
             
@@ -900,7 +939,8 @@
                 desc.includes('CAR PAYMENT') || desc.includes('UBER') || desc.includes('LYFT') ||
                 desc.includes('TRANSIT') || desc.includes('PARKING') || desc.includes('TOLL') ||
                 desc.includes('AAA ') || desc.includes('JIFFY LUBE') || desc.includes('MIDAS') ||
-                desc.includes('AUTO REPAIR') || desc.includes('MECHANIC') || desc.includes('DMV')) {
+                desc.includes('AUTO REPAIR') || desc.includes('MECHANIC') || desc.includes('DMV') ||
+                desc.includes('VALVOLINE') || desc.includes('PEP BOYS')) {
                 return 'Transportation';
             }
             
@@ -909,14 +949,15 @@
                 desc.includes('DENTAL') || desc.includes('DENTIST') || desc.includes('VISION') ||
                 desc.includes('PHARMACY') || desc.includes('CVS') || desc.includes('WALGREENS') ||
                 desc.includes('RITE AID') || desc.includes('PRESCRIPTION') || desc.includes('CLINIC') ||
-                desc.includes('HEALTH') || desc.includes('URGENT CARE') || desc.includes('THERAPY')) {
+                desc.includes('HEALTH') || desc.includes('URGENT CARE') || desc.includes('THERAPY') ||
+                desc.includes('CHIROPRACTOR') || desc.includes('PHYSICAL THERAPY')) {
                 return 'Healthcare';
             }
             
             // Insurance - Life, health, home, auto insurance (if not already categorized)
             if (desc.includes('INSURANCE') || desc.includes('GEICO') || desc.includes('STATE FARM') ||
                 desc.includes('PROGRESSIVE') || desc.includes('ALLSTATE') || desc.includes('USAA') ||
-                desc.includes('LIBERTY MUTUAL') || desc.includes('PREMIUM')) {
+                desc.includes('LIBERTY MUTUAL') || desc.includes('PREMIUM') || desc.includes('FARMERS INS')) {
                 return 'Insurance';
             }
             
@@ -924,7 +965,8 @@
             if (desc.includes('CREDIT CARD PAYMENT') || desc.includes('LOAN PAYMENT') || 
                 desc.includes('STUDENT LOAN') || desc.includes('NELNET') || desc.includes('NAVIENT') ||
                 desc.includes('GREAT LAKES') || desc.includes('PAYMENT TO CHASE') || 
-                desc.includes('PAYMENT TO CITI') || desc.includes('PAYMENT TO DISCOVER')) {
+                desc.includes('PAYMENT TO CITI') || desc.includes('PAYMENT TO DISCOVER') ||
+                desc.includes('PAYMENT TO CAPITAL ONE') || desc.includes('PAYMENT TO AMEX')) {
                 return 'Debt Payments';
             }
             
@@ -932,7 +974,8 @@
             if (desc.includes('SAVINGS') || desc.includes('INVESTMENT') || desc.includes('401K') ||
                 desc.includes('IRA') || desc.includes('FIDELITY') || desc.includes('VANGUARD') ||
                 desc.includes('SCHWAB') || desc.includes('ROBINHOOD') || desc.includes('BETTERMENT') ||
-                desc.includes('WEALTHFRONT') || amount > 0 && desc.includes('TRANSFER TO SAVINGS')) {
+                desc.includes('WEALTHFRONT') || desc.includes('E*TRADE') || desc.includes('TD AMERITRADE') ||
+                (amount < 0 && desc.includes('TRANSFER TO SAVINGS'))) {
                 return 'Savings & Investments';
             }
             
@@ -943,7 +986,7 @@
                 desc.includes('CLOTHING') || desc.includes('APPAREL') || desc.includes('FOOTWEAR') ||
                 desc.includes('NIKE') || desc.includes('ADIDAS') || desc.includes('KOHLS') ||
                 desc.includes('MACYS') || desc.includes('NORDSTROM') || desc.includes('SEPHORA') ||
-                desc.includes('ULTA')) {
+                desc.includes('ULTA') || desc.includes('OLD NAVY') || desc.includes('GAP')) {
                 return 'Personal Care';
             }
             
@@ -954,7 +997,7 @@
                 desc.includes('CINEMA') || desc.includes('CONCERT') || desc.includes('TICKET') ||
                 desc.includes('STEAM') || desc.includes('PLAYSTATION') || desc.includes('XBOX') ||
                 desc.includes('NINTENDO') || desc.includes('HOBBY') || desc.includes('BEST BUY') ||
-                desc.includes('GAMESTOP')) {
+                desc.includes('GAMESTOP') || desc.includes('AMC THEATERS') || desc.includes('REGAL')) {
                 return 'Entertainment';
             }
             
@@ -968,11 +1011,6 @@
                 desc.includes('CASH APP') || desc.includes('CHECK')) {
                 // Transfers and payments - could be anything, let user categorize
                 return 'Miscellaneous';
-            }
-            
-            if (desc.includes('U-HAUL') || desc.includes('STORAGE')) {
-                // Storage is technically housing-related
-                return 'Housing';
             }
             
             if (desc.includes('USPS') || desc.includes('FEDEX') || desc.includes('UPS')) {
