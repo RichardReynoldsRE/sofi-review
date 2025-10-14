@@ -717,17 +717,79 @@
 
             <!-- Trends Tab -->
             <div id="trendsTab" class="tab-content" style="display: none;">
+                <!-- Trend Summary Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Monthly Trend</div>
+                        <div class="stat-value" id="trendDirection" style="color: #4299e1;">--</div>
+                        <div class="stat-sub" id="trendDetails"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Daily Avg Spending</div>
+                        <div class="stat-value" id="dailyAvgSpending" style="color: #f59e0b;">$0</div>
+                        <div class="stat-sub" id="dailyTrend"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Best Savings Month</div>
+                        <div class="stat-value positive" id="bestMonth" style="font-size: 1.5rem;">--</div>
+                        <div class="stat-sub" id="bestMonthAmount"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Spending Pattern</div>
+                        <div class="stat-value" id="spendingPattern" style="color: #9f7aea; font-size: 1.5rem;">--</div>
+                        <div class="stat-sub" id="patternDetails"></div>
+                    </div>
+                </div>
+
+                <!-- Anomaly Detection -->
+                <div class="insight-box" id="anomalyBox" style="display: none;">
+                    <h3>⚠️ Unusual Activity Detected</h3>
+                    <ul id="anomalyList"></ul>
+                </div>
+
+                <!-- Category Momentum -->
+                <div class="chart-container">
+                    <h3>📊 Category Momentum - What's Trending</h3>
+                    <p style="color: #718096; margin-bottom: 20px;">Compare your last 3 months vs previous 3 months to see spending trends</p>
+                    <div id="categoryMomentumGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;"></div>
+                </div>
+
+                <!-- Seasonal Patterns -->
+                <div class="chart-container">
+                    <h3>🌡️ Seasonal Spending Patterns</h3>
+                    <p style="color: #718096; margin-bottom: 20px;">Your spending patterns across different times of year</p>
+                    <div id="seasonalInsights"></div>
+                </div>
+
+                <!-- Main Charts -->
                 <div class="chart-container">
                     <h3>Monthly Income vs Expenses</h3>
                     <canvas id="monthlyChart"></canvas>
                 </div>
+                
                 <div class="chart-container">
                     <h3>Balance Over Time</h3>
                     <canvas id="balanceChart"></canvas>
                 </div>
+                
                 <div class="chart-container">
                     <h3>Category Trends Over Time</h3>
                     <canvas id="categoryTrendChart"></canvas>
+                </div>
+
+                <!-- Spending Heatmap -->
+                <div class="chart-container">
+                    <h3>📅 Spending Heatmap - When Do You Spend Most?</h3>
+                    <p style="color: #718096; margin-bottom: 20px;">Darker colors indicate higher spending days</p>
+                    <div id="spendingHeatmap"></div>
+                </div>
+
+                <!-- Forecast -->
+                <div class="chart-container">
+                    <h3>🔮 3-Month Forecast</h3>
+                    <p style="color: #718096; margin-bottom: 20px;">Based on your current spending trends</p>
+                    <div id="forecastInsights"></div>
+                    <canvas id="forecastChart"></canvas>
                 </div>
             </div>
 
