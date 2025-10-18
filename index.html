@@ -1154,10 +1154,8 @@
         </div>
     </div>
 
-    <!-- Hidden file input for adding more data -->
     <input type="file" id="additionalFileInput" accept=".csv" multiple style="display: none;" />
 
-    <!-- Notification -->
     <div class="notification" id="notification">
         <h4 id="notificationTitle"></h4>
         <p id="notificationMessage"></p>
@@ -1175,7 +1173,6 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
         let allTransactions = [];
         let filteredTransactionsByDate = [];
@@ -1683,9 +1680,7 @@
             const detailsHtml = analytics.categoryData.map(cat => {
                 const details = analytics.categoryDetails[cat.name] || [];
                 const avgTransaction = cat.value / details.length;
-                return '<div style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 10px;"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><strong style="color: #2d3748;">' + cat.name + '</strong><strong style="color: ' + categoryColors[cat.name] + ';">
- + cat.value.toLocaleString() + '</strong></div><div style="color: #718096; font-size: 0.9rem;">' + details.length + ' transactions | Avg: 
- + avgTransaction.toFixed(2) + '</div></div>';
+                return '<div style="margin-bottom: 20px; padding: 15px; background: #f7fafc; border-radius: 10px;"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><strong style="color: #2d3748;">' + cat.name + '</strong><strong style="color: ' + categoryColors[cat.name] + ';">$' + cat.value.toLocaleString() + '</strong></div><div style="color: #718096; font-size: 0.9rem;">' + details.length + ' transactions | Avg: $' + avgTransaction.toFixed(2) + '</div></div>';
             }).join('');
             document.getElementById('categoryDetailsList').innerHTML = detailsHtml;
             if (charts.monthlyChart) charts.monthlyChart.destroy();
@@ -1723,10 +1718,8 @@
                 data: { labels: analytics.monthlyTrends.map(m => m.month), datasets: categoryTrendDatasets },
                 options: {
                     responsive: true, interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': 
- + context.parsed.y.toLocaleString(); } } } },
-                    scales: { y: { stacked: true, ticks: { callback: function(value) { return '
- + value.toLocaleString(); } } }, x: { stacked: true } }
+                    plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': $' + context.parsed.y.toLocaleString(); } } } },
+                    scales: { y: { stacked: true, ticks: { callback: function(value) { return '$' + value.toLocaleString(); } } }, x: { stacked: true } }
                 }
             });
         }
@@ -1749,8 +1742,7 @@
             if (analytics.categoryData.length > 0) {
                 const topCategory = analytics.categoryData[0];
                 const topPercent = (topCategory.value / analytics.totalExpenses * 100).toFixed(1);
-                insights.push('Your highest spending category is <strong>"' + topCategory.name + '"</strong> at <strong>
- + topCategory.value.toLocaleString() + '</strong> (' + topPercent + '% of expenses).');
+                insights.push('Your highest spending category is <strong>"' + topCategory.name + '"</strong> at <strong>$' + topCategory.value.toLocaleString() + '</strong> (' + topPercent + '% of expenses).');
             }
             const rentCategory = analytics.categoryData.find(c => c.name === 'Rent');
             const housingCategory = analytics.categoryData.find(c => c.name === 'Housing');
@@ -1758,8 +1750,7 @@
             if (totalHousingCost > 0) {
                 const housingPercent = (totalHousingCost / analytics.totalIncome * 100);
                 if (housingPercent > 35) {
-                    insights.push('⚠️ Your total housing costs are <strong>' + housingPercent.toFixed(1) + '%</strong> of income (<strong>
- + totalHousingCost.toLocaleString() + '</strong>). Experts recommend keeping housing under <strong>30-35%</strong>.');
+                    insights.push('⚠️ Your total housing costs are <strong>' + housingPercent.toFixed(1) + '%</strong> of income (<strong>$' + totalHousingCost.toLocaleString() + '</strong>). Experts recommend keeping housing under <strong>30-35%</strong>.');
                 } else if (housingPercent < 25) {
                     insights.push('✅ Great job! Your housing costs are only <strong>' + housingPercent.toFixed(1) + '%</strong> of income, well below the 30-35% guideline.');
                 }
@@ -1768,8 +1759,7 @@
             if (transportCategory) {
                 const transportPercent = (transportCategory.value / analytics.totalIncome * 100);
                 if (transportPercent > 15) {
-                    insights.push('⚠️ Your transportation costs are <strong>' + transportPercent.toFixed(1) + '%</strong> of income (<strong>
- + transportCategory.value.toLocaleString() + '</strong>). Consider ways to reduce this below <strong>15%</strong>.');
+                    insights.push('⚠️ Your transportation costs are <strong>' + transportPercent.toFixed(1) + '%</strong> of income (<strong>$' + transportCategory.value.toLocaleString() + '</strong>). Consider ways to reduce this below <strong>15%</strong>.');
                 }
             }
             const monthlyIncrease = analytics.monthlyTrends.length > 1 ? ((analytics.monthlyTrends[analytics.monthlyTrends.length - 1].expenses - analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses) / analytics.monthlyTrends[analytics.monthlyTrends.length - 2].expenses * 100) : 0;
@@ -1780,8 +1770,7 @@
             }
             if (analytics.currentBalance < analytics.avgMonthlyExpenses * 3) {
                 const targetFund = (analytics.avgMonthlyExpenses * 3).toFixed(0);
-                insights.push('💰 Build your emergency fund to at least <strong>
- + parseFloat(targetFund).toLocaleString() + '</strong> (3 months of expenses).');
+                insights.push('💰 Build your emergency fund to at least <strong>$' + parseFloat(targetFund).toLocaleString() + '</strong> (3 months of expenses).');
             } else if (analytics.currentBalance >= analytics.avgMonthlyExpenses * 6) {
                 insights.push('✅ Excellent! You have <strong>' + (analytics.currentBalance / analytics.avgMonthlyExpenses).toFixed(1) + ' months</strong> of expenses saved.');
             }
@@ -1790,15 +1779,12 @@
             const miscAndUnmarkedTotal = (miscCategory?.value || 0) + (unmarkedCategory?.value || 0);
             if (miscAndUnmarkedTotal > analytics.totalExpenses * 0.15) {
                 const percentUncategorized = (miscAndUnmarkedTotal / analytics.totalExpenses * 100).toFixed(1);
-                insights.push('📊 <strong>' + percentUncategorized + '%</strong> of your spending (<strong>
- + miscAndUnmarkedTotal.toLocaleString() + '</strong>) is "Miscellaneous" or "Unmarked". Use the Transactions tab to recategorize these for better insights.');
+                insights.push('📊 <strong>' + percentUncategorized + '%</strong> of your spending (<strong>$' + miscAndUnmarkedTotal.toLocaleString() + '</strong>) is "Miscellaneous" or "Unmarked". Use the Transactions tab to recategorize these for better insights.');
             }
             const diningCategory = analytics.categoryData.find(c => c.name === 'Dining Out');
             const groceryCategory = analytics.categoryData.find(c => c.name === 'Groceries');
             if (diningCategory && groceryCategory && diningCategory.value > groceryCategory.value * 0.5) {
-                insights.push('🍽️ You\'re spending <strong>
- + diningCategory.value.toLocaleString() + '</strong> on dining out vs <strong>
- + groceryCategory.value.toLocaleString() + '</strong> on groceries. Cooking more at home could save significantly.');
+                insights.push('🍽️ You\'re spending <strong>$' + diningCategory.value.toLocaleString() + '</strong> on dining out vs <strong>$' + groceryCategory.value.toLocaleString() + '</strong> on groceries. Cooking more at home could save significantly.');
             }
             document.getElementById('insightsList').innerHTML = insights.map(i => '<li>' + i + '</li>').join('');
         }
@@ -1819,8 +1805,7 @@
             }
             if (topSpending && topSpending.name === 'Dining Out' && analytics.monthlyTrends.length > 0) {
                 const avgPerMonth = topSpending.value / analytics.monthlyTrends.length;
-                shortTerm.push({ text: 'Reduce dining out frequency by half and meal prep at home more often', impact: 'Save 
- + Math.round(avgPerMonth * 0.5) + '/mo' });
+                shortTerm.push({ text: 'Reduce dining out frequency by half and meal prep at home more often', impact: 'Save $' + Math.round(avgPerMonth * 0.5) + '/mo' });
             }
             const utilitiesCategory = analytics.categoryData.find(c => c.name === 'Utilities');
             if (utilitiesCategory && analytics.monthlyTrends.length > 0) {
@@ -1837,16 +1822,14 @@
                 const targetSavings = (analytics.avgMonthlyIncome * 0.15);
                 const currentSavings = analytics.avgMonthlyIncome - analytics.avgMonthlyExpenses;
                 const gap = targetSavings - currentSavings;
-                shortTerm.push({ text: 'Set up automatic transfer of 
- + Math.round(gap) + '/mo to savings account on payday', impact: 'Reach 15% savings rate' });
+                shortTerm.push({ text: 'Set up automatic transfer of $' + Math.round(gap) + '/mo to savings account on payday', impact: 'Reach 15% savings rate' });
             }
             const debtCategory = analytics.categoryData.find(c => c.name === 'Debt Payments');
             if (debtCategory) {
                 mediumTerm.push({ text: 'List all debts by interest rate and create a debt payoff plan (avalanche method)', impact: 'Save on interest' });
             }
             if (analytics.currentBalance < analytics.avgMonthlyExpenses * 3) {
-                mediumTerm.push({ text: 'Build emergency fund to 
- + (analytics.avgMonthlyExpenses * 6).toFixed(0) + ' (6 months of expenses)', impact: 'Financial security' });
+                mediumTerm.push({ text: 'Build emergency fund to $' + (analytics.avgMonthlyExpenses * 6).toFixed(0) + ' (6 months of expenses)', impact: 'Financial security' });
             }
             const healthcareCategory = analytics.categoryData.find(c => c.name === 'Healthcare');
             if (healthcareCategory && analytics.monthlyTrends.length > 0 && healthcareCategory.value / analytics.monthlyTrends.length > 200) {
@@ -1860,8 +1843,7 @@
             if (transportCategory && analytics.monthlyTrends.length > 0 && transportCategory.value / (analytics.totalIncome / analytics.monthlyTrends.length) > 0.15) {
                 mediumTerm.push({ text: 'Evaluate transportation costs: refinance auto loan, use public transit, or carpool when possible', impact: 'Reduce to 10-15%' });
             }
-            longTerm.push({ text: 'Increase income through skill development, certifications, or asking for 10-15% raise at performance review', impact: '+
- + (analytics.avgMonthlyIncome * 0.125).toFixed(0) + '/mo' });
+            longTerm.push({ text: 'Increase income through skill development, certifications, or asking for 10-15% raise at performance review', impact: '+$' + (analytics.avgMonthlyIncome * 0.125).toFixed(0) + '/mo' });
             longTerm.push({ text: 'Start investing in low-cost index funds (after emergency fund is built) with 10-15% of income', impact: 'Long-term wealth building' });
             longTerm.push({ text: 'Max out employer 401(k) match if available (free money!), then contribute to Roth IRA', impact: 'Retirement security' });
             longTerm.push({ text: 'Set specific financial goals with timelines: down payment fund, vacation savings, etc.', impact: 'Clear direction' });
@@ -1894,11 +1876,7 @@
                 } else if (percentage < 70) {
                     alertBadge = '<span class="budget-alert success">✓ On Track</span>';
                 }
-                return '<div class="budget-item"><div class="budget-header"><strong style="color: #2d3748;">' + cat.name + alertBadge + '</strong><div><span style="color: #718096; margin-right: 10px;">Monthly Target:</span><input type="number" class="budget-input" value="' + targetBudget + '" data-category="' + cat.name + '" onchange="updateBudgetTarget(\'' + cat.name + '\', this.value)" /></div></div><div class="budget-bar"><div class="budget-fill ' + statusClass + '" style="width: ' + Math.min(percentage, 100) + '%;">
- + currentSpending.toFixed(0) + ' / 
- + targetBudget + ' (' + percentage.toFixed(0) + '%)</div></div><div style="color: #718096; font-size: 0.85rem; margin-top: 5px;">' + (percentage > 100 ? '<span style="color: #ef4444;">Over by 
- + (currentSpending - targetBudget).toFixed(0) + '</span>' : '<span style="color: #10b981;">Under by 
- + (targetBudget - currentSpending).toFixed(0) + '</span>') + '</div></div>';
+                return '<div class="budget-item"><div class="budget-header"><strong style="color: #2d3748;">' + cat.name + alertBadge + '</strong><div><span style="color: #718096; margin-right: 10px;">Monthly Target:</span><input type="number" class="budget-input" value="' + targetBudget + '" data-category="' + cat.name + '" onchange="updateBudgetTarget(\'' + cat.name + '\', this.value)" /></div></div><div class="budget-bar"><div class="budget-fill ' + statusClass + '" style="width: ' + Math.min(percentage, 100) + '%;">$' + currentSpending.toFixed(0) + ' / $' + targetBudget + ' (' + percentage.toFixed(0) + '%)</div></div><div style="color: #718096; font-size: 0.85rem; margin-top: 5px;">' + (percentage > 100 ? '<span style="color: #ef4444;">Over by $' + (currentSpending - targetBudget).toFixed(0) + '</span>' : '<span style="color: #10b981;">Under by $' + (targetBudget - currentSpending).toFixed(0) + '</span>') + '</div></div>';
             }).join('');
             document.getElementById('budgetItems').innerHTML = budgetHtml;
             if (charts.budgetChart) charts.budgetChart.destroy();
@@ -1913,10 +1891,8 @@
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': 
- + context.parsed.y.toLocaleString(); } } } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return '
- + value.toLocaleString(); } } } }
+                    plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': $' + context.parsed.y.toLocaleString(); } } } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return '$' + value.toLocaleString(); } } } }
                 }
             });
         }
@@ -1948,8 +1924,7 @@
                 if (filteredTransactionsByDate.length > 0) {
                     const totalDays = Math.ceil((new Date(filteredTransactionsByDate[filteredTransactionsByDate.length - 1].Date) - new Date(filteredTransactionsByDate[0].Date)) / (1000 * 60 * 60 * 24));
                     const dailyAvg = totalDays > 0 ? analytics.totalExpenses / totalDays : 0;
-                    document.getElementById('dailyAvgSpending').textContent = '
- + dailyAvg.toFixed(2);
+                    document.getElementById('dailyAvgSpending').textContent = '$' + dailyAvg.toFixed(2);
                     const lastMonth = analytics.monthlyTrends[analytics.monthlyTrends.length - 1];
                     if (lastMonth) {
                         const daysInLastMonth = 30;
@@ -1970,8 +1945,7 @@
                     const savingsPerMonth = analytics.monthlyTrends.map(m => ({ month: m.month, savings: m.income - m.expenses }));
                     const bestSavings = savingsPerMonth.reduce((best, current) => current.savings > best.savings ? current : best);
                     document.getElementById('bestMonth').textContent = bestSavings.month;
-                    document.getElementById('bestMonthAmount').textContent = 'Saved 
- + bestSavings.savings.toLocaleString();
+                    document.getElementById('bestMonthAmount').textContent = 'Saved $' + bestSavings.savings.toLocaleString();
                 }
                 const avgExpenses = analytics.monthlyTrends.map(m => m.expenses);
                 if (avgExpenses.length > 0 && analytics.avgMonthlyExpenses > 0) {
@@ -1996,16 +1970,13 @@
                     if (prevMonth.expenses > 0) {
                         const expenseChange = ((month.expenses - prevMonth.expenses) / prevMonth.expenses * 100);
                         if (expenseChange > 40) {
-                            anomalies.push('<strong>' + month.month + '</strong>: Expenses spiked <strong>' + expenseChange.toFixed(0) + '%</strong> (
- + month.expenses.toLocaleString() + ' vs 
- + prevMonth.expenses.toLocaleString() + ')');
+                            anomalies.push('<strong>' + month.month + '</strong>: Expenses spiked <strong>' + expenseChange.toFixed(0) + '%</strong> ($' + month.expenses.toLocaleString() + ' vs $' + prevMonth.expenses.toLocaleString() + ')');
                         }
                     }
                     Object.entries(month.categories).forEach(([cat, amount]) => {
                         const avgCategorySpending = analytics.categoryData.find(c => c.name === cat)?.value / analytics.monthlyTrends.length || 0;
                         if (avgCategorySpending > 0 && amount > avgCategorySpending * 2.5 && amount > 500) {
-                            anomalies.push('<strong>' + month.month + '</strong>: Unusually high <strong>' + cat + '</strong> spending (
- + amount.toLocaleString() + ', ' + ((amount / avgCategorySpending - 1) * 100).toFixed(0) + '% above average)');
+                            anomalies.push('<strong>' + month.month + '</strong>: Unusually high <strong>' + cat + '</strong> spending ($' + amount.toLocaleString() + ', ' + ((amount / avgCategorySpending - 1) * 100).toFixed(0) + '% above average)');
                         }
                     });
                 });
@@ -2046,9 +2017,7 @@
                 if (data.direction === 'up') { cardClass += 'trending-up'; indicator = '📈'; changeColor = '#ef4444'; }
                 else if (data.direction === 'down') { cardClass += 'trending-down'; indicator = '📉'; changeColor = '#10b981'; }
                 else { cardClass += 'stable'; indicator = '➡️'; changeColor = '#3b82f6'; }
-                return '<div class="' + cardClass + '"><div class="momentum-header"><div class="momentum-title">' + cat + '</div><div class="momentum-indicator">' + indicator + '</div></div><div class="momentum-stats"><span>Last 3 mo: <strong>
- + data.recent.toFixed(0) + '</strong></span><span>Prev 3 mo: <strong>
- + data.previous.toFixed(0) + '</strong></span></div><div class="momentum-change" style="color: ' + changeColor + ';">' + (data.change > 0 ? '+' : '') + data.change.toFixed(1) + '% change</div></div>';
+                return '<div class="' + cardClass + '"><div class="momentum-header"><div class="momentum-title">' + cat + '</div><div class="momentum-indicator">' + indicator + '</div></div><div class="momentum-stats"><span>Last 3 mo: <strong>$' + data.recent.toFixed(0) + '</strong></span><span>Prev 3 mo: <strong>$' + data.previous.toFixed(0) + '</strong></span></div><div class="momentum-change" style="color: ' + changeColor + ';">' + (data.change > 0 ? '+' : '') + data.change.toFixed(1) + '% change</div></div>';
             }).join('');
             document.getElementById('categoryMomentumGrid').innerHTML = momentumHtml;
         }
@@ -2069,8 +2038,7 @@
             const seasonalHtml = Object.entries(seasons).filter(([_, data]) => data.count > 0).sort((a, b) => (b[1].total / b[1].count) - (a[1].total / a[1].count)).map(([season, data]) => {
                 const avg = data.total / data.count;
                 const vsOverall = analytics.avgMonthlyExpenses > 0 ? ((avg - analytics.avgMonthlyExpenses) / analytics.avgMonthlyExpenses * 100) : 0;
-                return '<div class="seasonal-card"><div class="seasonal-header"><div class="seasonal-title">' + season + '</div></div><div class="seasonal-stat">Average: <strong>
- + avg.toLocaleString() + '</strong>/month</div><div class="seasonal-stat" style="color: ' + (vsOverall > 0 ? '#ef4444' : '#10b981') + ';">' + (vsOverall > 0 ? '↑' : '↓') + ' ' + Math.abs(vsOverall).toFixed(1) + '% vs overall average</div><div class="seasonal-stat" style="color: #718096;">Based on ' + data.count + ' month' + (data.count > 1 ? 's' : '') + ' of data</div></div>';
+                return '<div class="seasonal-card"><div class="seasonal-header"><div class="seasonal-title">' + season + '</div></div><div class="seasonal-stat">Average: <strong>$' + avg.toLocaleString() + '</strong>/month</div><div class="seasonal-stat" style="color: ' + (vsOverall > 0 ? '#ef4444' : '#10b981') + ';">' + (vsOverall > 0 ? '↑' : '↓') + ' ' + Math.abs(vsOverall).toFixed(1) + '% vs overall average</div><div class="seasonal-stat" style="color: #718096;">Based on ' + data.count + ' month' + (data.count > 1 ? 's' : '') + ' of data</div></div>';
             }).join('');
             document.getElementById('seasonalInsights').innerHTML = seasonalHtml;
         }
@@ -2089,8 +2057,7 @@
             const heatmapHtml = '<div style="display: flex; justify-content: space-around; margin-bottom: 20px;">' + dayAverages.map(d => {
                 const intensity = maxAvg > 0 ? d.avg / maxAvg : 0;
                 const color = intensity > 0.8 ? '#ef4444' : intensity > 0.6 ? '#f59e0b' : intensity > 0.4 ? '#eab308' : intensity > 0.2 ? '#84cc16' : '#10b981';
-                return '<div style="text-align: center; flex: 1;"><div style="font-weight: 600; color: #4a5568; margin-bottom: 8px;">' + dayNames[d.day] + '</div><div style="background: ' + color + '; height: ' + (100 + (intensity * 100)) + 'px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
- + d.avg.toFixed(0) + '</div><div style="font-size: 0.8rem; color: #718096; margin-top: 5px;">' + dayCounts[d.day] + ' transactions</div></div>';
+                return '<div style="text-align: center; flex: 1;"><div style="font-weight: 600; color: #4a5568; margin-bottom: 8px;">' + dayNames[d.day] + '</div><div style="background: ' + color + '; height: ' + (100 + (intensity * 100)) + 'px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">$' + d.avg.toFixed(0) + '</div><div style="font-size: 0.8rem; color: #718096; margin-top: 5px;">' + dayCounts[d.day] + ' transactions</div></div>';
             }).join('') + '</div><div style="text-align: center; color: #718096; margin-top: 20px;"><strong>Insight:</strong> You spend most on <strong>' + dayNames[dayAverages.reduce((max, d) => d.avg > max.avg ? d : max).day] + '</strong></div>';
             document.getElementById('spendingHeatmap').innerHTML = heatmapHtml;
         }
@@ -2118,10 +2085,7 @@
             }
             const trend = slope > 50 ? 'increasing' : slope < -50 ? 'decreasing' : 'stable';
             const trendEmoji = slope > 50 ? '📈' : slope < -50 ? '📉' : '➡️';
-            const forecastInsightsHtml = '<div style="background: #f7fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px;"><div style="font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 10px;">' + trendEmoji + ' Your spending is trending <strong>' + trend + '</strong></div><div style="color: #4a5568;">' + (slope > 50 ? 'Expenses are increasing by approximately 
- + Math.abs(slope).toFixed(0) + '/month' : slope < -50 ? 'Expenses are decreasing by approximately 
- + Math.abs(slope).toFixed(0) + '/month' : 'Expenses are relatively stable month-to-month') + '</div></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">' + forecasts.map((f, i) => '<div class="forecast-card"><div class="forecast-month">' + f.month + '</div><div class="forecast-amount">
- + f.amount.toLocaleString() + '</div><div class="forecast-confidence">±10-15% variance</div></div>').join('') + '</div>';
+            const forecastInsightsHtml = '<div style="background: #f7fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px;"><div style="font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 10px;">' + trendEmoji + ' Your spending is trending <strong>' + trend + '</strong></div><div style="color: #4a5568;">' + (slope > 50 ? 'Expenses are increasing by approximately $' + Math.abs(slope).toFixed(0) + '/month' : slope < -50 ? 'Expenses are decreasing by approximately $' + Math.abs(slope).toFixed(0) + '/month' : 'Expenses are relatively stable month-to-month') + '</div></div><div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">' + forecasts.map((f, i) => '<div class="forecast-card"><div class="forecast-month">' + f.month + '</div><div class="forecast-amount">$' + f.amount.toLocaleString() + '</div><div class="forecast-confidence">±10-15% variance</div></div>').join('') + '</div>';
             document.getElementById('forecastInsights').innerHTML = forecastInsightsHtml;
             if (charts.forecastChart) charts.forecastChart.destroy();
             const historicalLabels = recentMonths.map(m => m.month);
@@ -2238,152 +2202,4 @@
                 const netAmount = totalIncome - totalExpenses;
                 
                 const totalAmountEl = document.getElementById('totalAmount');
-                const totalBreakdownEl = document.getElementById('totalBreakdown');
-                totalAmountEl.innerHTML = '<span style="color: ' + (netAmount >= 0 ? '#10b981' : '#ef4444') + ';">' + (netAmount >= 0 ? '+' : '') + '
- + netAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
-                totalBreakdownEl.innerHTML = '<span style="color: #10b981;">Income: +
- + totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span> | <span style="color: #ef4444;">Expenses: -
- + totalExpenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
-                
-                const countText = filteredTransactionsList.length > displayedTransactionCount ? 'Showing ' + displayedTransactionCount + ' of ' + filteredTransactionsList.length + ' transactions (scroll for more)' : filteredTransactionsList.length + ' transactions';
-                document.getElementById('transactionCount').textContent = countText;
-            } catch (error) {
-                console.error('Error rendering transactions:', error);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ef4444;">Error displaying transactions. Please refresh and try again.</td></tr>';
-            }
-        }
-
-        function toggleTransactionSelect(transactionId) {
-            if (selectedTransactions.has(transactionId)) {
-                selectedTransactions.delete(transactionId);
-            } else {
-                selectedTransactions.add(transactionId);
-            }
-            updateSelectionUI();
-        }
-
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll').checked;
-            const visibleTransactions = filteredTransactionsList.slice(0, displayedTransactionCount);
-            if (selectAll) {
-                visibleTransactions.forEach(t => selectedTransactions.add(t._id));
-            } else {
-                visibleTransactions.forEach(t => selectedTransactions.delete(t._id));
-            }
-            updateSelectionUI();
-        }
-
-        function updateSelectionUI() {
-            const bulkActions = document.getElementById('bulkActions');
-            const selectedCount = document.getElementById('selectedCount');
-            const exportBtn = document.getElementById('exportBtn');
-            
-            if (selectedTransactions.size > 0) {
-                bulkActions.classList.add('active');
-                selectedCount.textContent = selectedTransactions.size + ' selected';
-                exportBtn.textContent = '📥 Export Selected (' + selectedTransactions.size + ')';
-            } else {
-                bulkActions.classList.remove('active');
-                exportBtn.textContent = '📥 Export All';
-            }
-            renderTransactions();
-        }
-
-        function clearSelection() {
-            selectedTransactions.clear();
-            document.getElementById('selectAll').checked = false;
-            updateSelectionUI();
-        }
-
-        function bulkRecategorize() {
-            if (selectedTransactions.size === 0) return;
-            document.getElementById('modalDescription').textContent = 'Recategorize ' + selectedTransactions.size + ' selected transactions';
-            const optionsHtml = categories.map(cat => '<div class="category-option" onclick="selectCategory(\'' + cat + '\')">' + cat + '</div>').join('');
-            document.getElementById('categoryOptions').innerHTML = optionsHtml;
-            document.getElementById('categoryModal').classList.add('active');
-            currentEditTransaction = { isBulk: true };
-        }
-
-        function openCategoryModal(transactionId) {
-            currentEditTransaction = allTransactions.find(t => t._id === transactionId);
-            if (!currentEditTransaction) return;
-            document.getElementById('modalDescription').textContent = currentEditTransaction.Description + ' (Current: ' + currentEditTransaction.Category + ')';
-            const optionsHtml = categories.map(cat => '<div class="category-option" onclick="selectCategory(\'' + cat + '\')">' + cat + '</div>').join('');
-            document.getElementById('categoryOptions').innerHTML = optionsHtml;
-            document.getElementById('categoryModal').classList.add('active');
-        }
-
-        function selectCategory(category) {
-            document.querySelectorAll('.category-option').forEach(el => el.classList.remove('selected'));
-            event.target.classList.add('selected');
-            if (currentEditTransaction) {
-                currentEditTransaction.tempCategory = category;
-            }
-        }
-
-        function saveCategory() {
-            if (!currentEditTransaction || !currentEditTransaction.tempCategory) {
-                alert('Please select a category first!');
-                return;
-            }
-            if (currentEditTransaction.isBulk) {
-                selectedTransactions.forEach(id => {
-                    const transaction = allTransactions.find(t => t._id === id);
-                    if (transaction) {
-                        transaction.CustomCategory = currentEditTransaction.tempCategory;
-                        transaction.Category = currentEditTransaction.tempCategory;
-                    }
-                });
-                clearSelection();
-            } else {
-                currentEditTransaction.CustomCategory = currentEditTransaction.tempCategory;
-                currentEditTransaction.Category = currentEditTransaction.tempCategory;
-            }
-            closeModal();
-            processData();
-        }
-
-        function closeModal() {
-            document.getElementById('categoryModal').classList.remove('active');
-            currentEditTransaction = null;
-        }
-
-        function exportCSV() {
-            let transactionsToExport;
-            let filename;
-            
-            if (selectedTransactions.size > 0) {
-                transactionsToExport = allTransactions.filter(t => selectedTransactions.has(t._id));
-                filename = 'financial_data_selected_' + selectedTransactions.size + '_transactions.csv';
-            } else {
-                transactionsToExport = allTransactions;
-                filename = 'financial_data_tagged.csv';
-            }
-            
-            const headers = ['Date', 'Description', 'Type', 'Amount', 'Current balance', 'Status', 'CustomCategory'];
-            const csvContent = [headers.join(','), ...transactionsToExport.map(t => [t.Date, '"' + t.Description + '"', t.Type, t.Amount, t['Current balance'], t.Status, t.CustomCategory || ''].join(','))].join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            if (selectedTransactions.size > 0) {
-                alert('✅ Exported ' + selectedTransactions.size + ' selected transactions with custom categories!');
-            } else {
-                alert('✅ CSV exported with your custom categories!');
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            const activeTab = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick').includes(tabName));
-            if (activeTab) activeTab.classList.add('active');
-            document.getElementById(tabName + 'Tab').style.display = 'block';
-        }
-    </script>
-</body>
-</html>
+                const totalBreakdown
