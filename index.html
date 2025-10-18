@@ -77,6 +77,28 @@
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
         
+        .upload-tip {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+            display: inline-block;
+        }
+        
+        .upload-tip strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .upload-tip p {
+            color: #4a5568;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        
         .btn {
             padding: 12px 30px;
             border: none;
@@ -105,6 +127,15 @@
         
         .btn-success:hover {
             background: #059669;
+        }
+        
+        .btn-secondary {
+            background: #8b5cf6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7c3aed;
         }
         
         .dashboard {
@@ -797,6 +828,56 @@
             color: #065f46;
         }
         
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            min-width: 300px;
+            max-width: 450px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.show {
+            display: block;
+        }
+        
+        .notification.success {
+            border-left: 4px solid #10b981;
+        }
+        
+        .notification.info {
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .notification h4 {
+            color: #2d3748;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        
+        .notification p {
+            color: #718096;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
         @media (max-width: 768px) {
             .chart-grid {
                 grid-template-columns: 1fr;
@@ -805,6 +886,12 @@
             .header h1 {
                 font-size: 1.5rem;
             }
+            
+            .notification {
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
         }
     </style>
 </head>
@@ -812,10 +899,14 @@
     <div class="container">
         <div class="upload-section" id="uploadSection">
             <h1>💰 Advanced Financial Dashboard</h1>
-            <p>Upload your bank transaction CSV to unlock powerful insights</p>
+            <p>Upload your bank transaction CSV files to unlock powerful insights</p>
             <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".csv" />
-                <label for="fileInput" class="file-input-label">📊 Choose CSV File</label>
+                <input type="file" id="fileInput" accept=".csv" multiple />
+                <label for="fileInput" class="file-input-label">📊 Choose CSV File(s)</label>
+            </div>
+            <div class="upload-tip">
+                <strong>💡 Pro Tip:</strong>
+                <p>You can select multiple CSV files at once! Perfect for combining years of SoFi data into one complete view.</p>
             </div>
             <div class="loading" id="loadingText" style="display: none;">
                 Analyzing your financial data...
@@ -847,6 +938,7 @@
                                 <button class="apply-filter-btn" onclick="applyCustomDateFilter()">Apply</button>
                             </div>
                         </div>
+                        <button class="btn btn-secondary" onclick="addMoreData()">➕ Add More Data</button>
                         <button class="btn btn-success" onclick="exportCSV()" id="exportBtn">📥 Export All</button>
                     </div>
                 </div>
@@ -1062,6 +1154,15 @@
         </div>
     </div>
 
+    <!-- Hidden file input for adding more data -->
+    <input type="file" id="additionalFileInput" accept=".csv" multiple style="display: none;" />
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <h4 id="notificationTitle"></h4>
+        <p id="notificationMessage"></p>
+    </div>
+
     <div class="modal" id="categoryModal">
         <div class="modal-content">
             <h3>Recategorize Transaction</h3>
@@ -1084,6 +1185,7 @@
         let displayedTransactionCount = 100;
         let filteredTransactionsList = [];
         let isLoadingMore = false;
+        let loadedFilesCount = 0;
 
         const categories = ['Rent', 'Housing', 'Utilities', 'Groceries', 'Transportation', 'Healthcare', 'Insurance', 'Debt Payments', 'Savings & Investments', 'Personal Care', 'Pets', 'Dining Out', 'Entertainment', 'Business Expense', 'Gifts', 'Income', 'Miscellaneous', 'Unmarked'];
         const categoryColors = {
@@ -1096,35 +1198,159 @@
         };
 
         document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+        document.getElementById('additionalFileInput').addEventListener('change', handleAdditionalFiles);
         document.getElementById('searchInput').addEventListener('input', filterTransactions);
         document.getElementById('typeFilter').addEventListener('change', filterTransactions);
         document.getElementById('categoryFilter').addEventListener('change', filterTransactions);
         document.getElementById('dateFilter').addEventListener('change', filterTransactions);
 
         function handleFileUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
             document.getElementById('loadingText').style.display = 'block';
-            Papa.parse(file, {
-                header: true, dynamicTyping: true, skipEmptyLines: true,
-                complete: function(results) {
-                    allTransactions = results.data.map((row, idx) => {
-                        const cleaned = {};
-                        Object.keys(row).forEach(key => { cleaned[key.trim()] = row[key]; });
-                        cleaned._id = idx;
-                        cleaned.CustomCategory = cleaned.CustomCategory || null;
-                        return cleaned;
-                    });
-                    filteredTransactionsByDate = [...allTransactions];
-                    const minDate = new Date(allTransactions[0].Date);
-                    const maxDate = new Date(allTransactions[allTransactions.length - 1].Date);
-                    document.getElementById('startDate').value = minDate.toISOString().split('T')[0];
-                    document.getElementById('endDate').value = maxDate.toISOString().split('T')[0];
-                    processData();
-                    document.getElementById('uploadSection').style.display = 'none';
-                    document.getElementById('dashboard').classList.add('active');
+            loadedFilesCount = files.length;
+            
+            processMultipleFiles(files, true);
+        }
+
+        function addMoreData() {
+            document.getElementById('additionalFileInput').click();
+        }
+
+        function handleAdditionalFiles(e) {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            
+            loadedFilesCount = files.length;
+            showNotification('Processing Files...', 'Analyzing ' + files.length + ' file(s) and detecting duplicates...', 'info');
+            
+            processMultipleFiles(files, false);
+        }
+
+        function processMultipleFiles(files, isInitialLoad) {
+            let allNewTransactions = [];
+            let filesProcessed = 0;
+            
+            Array.from(files).forEach((file, index) => {
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const transactions = results.data.map((row) => {
+                            const cleaned = {};
+                            Object.keys(row).forEach(key => {
+                                cleaned[key.trim()] = row[key];
+                            });
+                            cleaned.CustomCategory = cleaned.CustomCategory || null;
+                            return cleaned;
+                        });
+                        
+                        allNewTransactions = allNewTransactions.concat(transactions);
+                        filesProcessed++;
+                        
+                        if (filesProcessed === files.length) {
+                            finalizeMerge(allNewTransactions, isInitialLoad);
+                        }
+                    }
+                });
+            });
+        }
+
+        function finalizeMerge(newTransactions, isInitialLoad) {
+            if (isInitialLoad) {
+                // First time loading
+                allTransactions = newTransactions;
+            } else {
+                // Merging with existing data
+                const beforeCount = allTransactions.length;
+                const newCount = newTransactions.length;
+                
+                // Merge and remove duplicates
+                allTransactions = mergeAndDeduplicateTransactions(allTransactions, newTransactions);
+                
+                const afterCount = allTransactions.length;
+                const duplicatesRemoved = (beforeCount + newCount) - afterCount;
+                const actuallyAdded = afterCount - beforeCount;
+                
+                // Show notification
+                let message = 'Added ' + actuallyAdded + ' new transaction(s).';
+                if (duplicatesRemoved > 0) {
+                    message += ' Removed ' + duplicatesRemoved + ' duplicate(s).';
+                }
+                message += ' Total: ' + afterCount + ' transactions.';
+                
+                showNotification('Data Merged Successfully! 🎉', message, 'success');
+            }
+            
+            // Sort by date and reassign IDs
+            allTransactions.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+            allTransactions.forEach((t, idx) => {
+                t._id = idx;
+            });
+            
+            filteredTransactionsByDate = [...allTransactions];
+            
+            // Set date range
+            if (allTransactions.length > 0) {
+                const minDate = new Date(allTransactions[0].Date);
+                const maxDate = new Date(allTransactions[allTransactions.length - 1].Date);
+                document.getElementById('startDate').value = minDate.toISOString().split('T')[0];
+                document.getElementById('endDate').value = maxDate.toISOString().split('T')[0];
+            }
+            
+            processData();
+            
+            if (isInitialLoad) {
+                document.getElementById('uploadSection').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                
+                if (loadedFilesCount > 1) {
+                    showNotification('Files Loaded! 🎉', 'Successfully loaded ' + loadedFilesCount + ' CSV files with ' + allTransactions.length + ' transactions.', 'success');
+                }
+            }
+            
+            // Reset file input
+            document.getElementById('additionalFileInput').value = '';
+        }
+
+        function mergeAndDeduplicateTransactions(existing, newOnes) {
+            const combined = [...existing, ...newOnes];
+            
+            // Create a map to detect duplicates
+            // Key: date + description + amount + balance
+            const seen = new Map();
+            const unique = [];
+            
+            combined.forEach(transaction => {
+                const key = transaction.Date + '|' + 
+                           transaction.Description + '|' + 
+                           transaction.Amount + '|' + 
+                           transaction['Current balance'];
+                
+                if (!seen.has(key)) {
+                    seen.set(key, true);
+                    unique.push(transaction);
                 }
             });
+            
+            return unique;
+        }
+
+        function showNotification(title, message, type) {
+            const notification = document.getElementById('notification');
+            const notificationTitle = document.getElementById('notificationTitle');
+            const notificationMessage = document.getElementById('notificationMessage');
+            
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            notification.className = 'notification show ' + type;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
         }
 
         function handleDateFilterChange() {
@@ -1801,6 +2027,7 @@
         function populateFilters() {
             const types = [...new Set(allTransactions.map(t => t.Type))];
             const typeFilter = document.getElementById('typeFilter');
+            typeFilter.innerHTML = '<option value="all">All Types</option>';
             types.forEach(type => {
                 const option = document.createElement('option');
                 option.value = type;
@@ -1808,6 +2035,7 @@
                 typeFilter.appendChild(option);
             });
             const categoryFilter = document.getElementById('categoryFilter');
+            categoryFilter.innerHTML = '<option value="all">All Categories</option>';
             categories.forEach(cat => {
                 const option = document.createElement('option');
                 option.value = cat;
@@ -1869,12 +2097,10 @@
             const tbody = document.getElementById('transactionsBody');
             tbody.innerHTML = toDisplay.map(t => '<tr class="transaction-row ' + (selectedTransactions.has(t._id) ? 'selected' : '') + '" data-id="' + t._id + '"><td><input type="checkbox" class="select-checkbox" ' + (selectedTransactions.has(t._id) ? 'checked' : '') + ' onchange="toggleTransactionSelect(' + t._id + ')" /></td><td>' + new Date(t.Date).toLocaleDateString() + '</td><td>' + t.Description + '</td><td>' + t.Type + '</td><td><span class="category-tag category-' + t.Category.replace(/[^a-zA-Z]/g, '') + '" onclick="openCategoryModal(' + t._id + ')">' + t.Category + '</span></td><td style="text-align: right;" class="' + (t.Amount > 0 ? 'positive' : 'negative') + '">' + (t.Amount > 0 ? '+' : '') + Math.abs(t.Amount).toFixed(2) + '</td><td style="text-align: right;">' + t['Current balance'].toFixed(2) + '</td></tr>').join('');
             
-            // Calculate totals for filtered transactions
             const totalIncome = filteredTransactionsList.reduce((sum, t) => sum + (t.Amount > 0 ? t.Amount : 0), 0);
             const totalExpenses = filteredTransactionsList.reduce((sum, t) => sum + (t.Amount < 0 ? Math.abs(t.Amount) : 0), 0);
             const netAmount = totalIncome - totalExpenses;
             
-            // Update totals display
             const totalAmountEl = document.getElementById('totalAmount');
             const totalBreakdownEl = document.getElementById('totalBreakdown');
             totalAmountEl.innerHTML = '<span style="color: ' + (netAmount >= 0 ? '#10b981' : '#ef4444') + ';">' + (netAmount >= 0 ? '+' : '') + '$' + netAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
@@ -1980,16 +2206,13 @@
         }
 
         function exportCSV() {
-            // Determine which transactions to export
             let transactionsToExport;
             let filename;
             
             if (selectedTransactions.size > 0) {
-                // Export only selected transactions
                 transactionsToExport = allTransactions.filter(t => selectedTransactions.has(t._id));
                 filename = 'financial_data_selected_' + selectedTransactions.size + '_transactions.csv';
             } else {
-                // Export all transactions
                 transactionsToExport = allTransactions;
                 filename = 'financial_data_tagged.csv';
             }
