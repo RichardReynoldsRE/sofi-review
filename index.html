@@ -2202,4 +2202,149 @@
                 const netAmount = totalIncome - totalExpenses;
                 
                 const totalAmountEl = document.getElementById('totalAmount');
-                const totalBreakdown
+                const totalBreakdownEl = document.getElementById('totalBreakdown');
+                totalAmountEl.innerHTML = '<span style="color: ' + (netAmount >= 0 ? '#10b981' : '#ef4444') + ';">' + (netAmount >= 0 ? '+' : '') + ' + netAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
+                totalBreakdownEl.innerHTML = '<span style="color: #10b981;">Income: + + totalIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span> | <span style="color: #ef4444;">Expenses: - + totalExpenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '</span>';
+                
+                const countText = filteredTransactionsList.length > displayedTransactionCount ? 'Showing ' + displayedTransactionCount + ' of ' + filteredTransactionsList.length + ' transactions (scroll for more)' : filteredTransactionsList.length + ' transactions';
+                document.getElementById('transactionCount').textContent = countText;
+            } catch (error) {
+                console.error('Error rendering transactions:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ef4444;">Error displaying transactions. Please refresh and try again.</td></tr>';
+            }
+        }
+
+        function toggleTransactionSelect(transactionId) {
+            if (selectedTransactions.has(transactionId)) {
+                selectedTransactions.delete(transactionId);
+            } else {
+                selectedTransactions.add(transactionId);
+            }
+            updateSelectionUI();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            const visibleTransactions = filteredTransactionsList.slice(0, displayedTransactionCount);
+            if (selectAll) {
+                visibleTransactions.forEach(t => selectedTransactions.add(t._id));
+            } else {
+                visibleTransactions.forEach(t => selectedTransactions.delete(t._id));
+            }
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            if (selectedTransactions.size > 0) {
+                bulkActions.classList.add('active');
+                selectedCount.textContent = selectedTransactions.size + ' selected';
+                exportBtn.textContent = '📥 Export Selected (' + selectedTransactions.size + ')';
+            } else {
+                bulkActions.classList.remove('active');
+                exportBtn.textContent = '📥 Export All';
+            }
+            renderTransactions();
+        }
+
+        function clearSelection() {
+            selectedTransactions.clear();
+            document.getElementById('selectAll').checked = false;
+            updateSelectionUI();
+        }
+
+        function bulkRecategorize() {
+            if (selectedTransactions.size === 0) return;
+            document.getElementById('modalDescription').textContent = 'Recategorize ' + selectedTransactions.size + ' selected transactions';
+            const optionsHtml = categories.map(cat => '<div class="category-option" onclick="selectCategory(\'' + cat + '\')">' + cat + '</div>').join('');
+            document.getElementById('categoryOptions').innerHTML = optionsHtml;
+            document.getElementById('categoryModal').classList.add('active');
+            currentEditTransaction = { isBulk: true };
+        }
+
+        function openCategoryModal(transactionId) {
+            currentEditTransaction = allTransactions.find(t => t._id === transactionId);
+            if (!currentEditTransaction) return;
+            document.getElementById('modalDescription').textContent = currentEditTransaction.Description + ' (Current: ' + currentEditTransaction.Category + ')';
+            const optionsHtml = categories.map(cat => '<div class="category-option" onclick="selectCategory(\'' + cat + '\')">' + cat + '</div>').join('');
+            document.getElementById('categoryOptions').innerHTML = optionsHtml;
+            document.getElementById('categoryModal').classList.add('active');
+        }
+
+        function selectCategory(category) {
+            document.querySelectorAll('.category-option').forEach(el => el.classList.remove('selected'));
+            event.target.classList.add('selected');
+            if (currentEditTransaction) {
+                currentEditTransaction.tempCategory = category;
+            }
+        }
+
+        function saveCategory() {
+            if (!currentEditTransaction || !currentEditTransaction.tempCategory) {
+                alert('Please select a category first!');
+                return;
+            }
+            if (currentEditTransaction.isBulk) {
+                selectedTransactions.forEach(id => {
+                    const transaction = allTransactions.find(t => t._id === id);
+                    if (transaction) {
+                        transaction.CustomCategory = currentEditTransaction.tempCategory;
+                        transaction.Category = currentEditTransaction.tempCategory;
+                    }
+                });
+                clearSelection();
+            } else {
+                currentEditTransaction.CustomCategory = currentEditTransaction.tempCategory;
+                currentEditTransaction.Category = currentEditTransaction.tempCategory;
+            }
+            closeModal();
+            processData();
+        }
+
+        function closeModal() {
+            document.getElementById('categoryModal').classList.remove('active');
+            currentEditTransaction = null;
+        }
+
+        function exportCSV() {
+            let transactionsToExport;
+            let filename;
+            
+            if (selectedTransactions.size > 0) {
+                transactionsToExport = allTransactions.filter(t => selectedTransactions.has(t._id));
+                filename = 'financial_data_selected_' + selectedTransactions.size + '_transactions.csv';
+            } else {
+                transactionsToExport = allTransactions;
+                filename = 'financial_data_tagged.csv';
+            }
+            
+            const headers = ['Date', 'Description', 'Type', 'Amount', 'Current balance', 'Status', 'CustomCategory'];
+            const csvContent = [headers.join(','), ...transactionsToExport.map(t => [t.Date, '"' + t.Description + '"', t.Type, t.Amount, t['Current balance'], t.Status, t.CustomCategory || ''].join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            if (selectedTransactions.size > 0) {
+                alert('✅ Exported ' + selectedTransactions.size + ' selected transactions with custom categories!');
+            } else {
+                alert('✅ CSV exported with your custom categories!');
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            const activeTab = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick').includes(tabName));
+            if (activeTab) activeTab.classList.add('active');
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
