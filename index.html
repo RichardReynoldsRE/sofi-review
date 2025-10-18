@@ -1195,6 +1195,10 @@
             'Miscellaneous': '#6b7280', 'Unmarked': '#94a3b8'
         };
 
+        // Check if PapaParse is loaded
+        console.log('Papa Parse loaded:', typeof Papa !== 'undefined');
+        console.log('Script initialized');
+
         document.getElementById('fileInput').addEventListener('change', handleFileUpload);
         document.getElementById('additionalFileInput').addEventListener('change', handleAdditionalFiles);
         document.getElementById('searchInput').addEventListener('input', filterTransactions);
@@ -1203,8 +1207,12 @@
         document.getElementById('dateFilter').addEventListener('change', filterTransactions);
 
         function handleFileUpload(e) {
+            console.log('File upload triggered', e.target.files);
             const files = e.target.files;
-            if (!files || files.length === 0) return;
+            if (!files || files.length === 0) {
+                console.log('No files selected');
+                return;
+            }
             
             document.getElementById('loadingText').style.display = 'block';
             loadedFilesCount = files.length;
